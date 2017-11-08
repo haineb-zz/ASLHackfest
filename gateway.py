@@ -22,12 +22,11 @@ class Gateway(threading.Thread, object):
         self.running = True
         
         self._socketIn = self._zmqContext.socket(zmq.SUB)
-        self._socketIn.setsockopt(zmq.SUBSCRIBE,'')
         self._socketIn.RCVTIMEO = 100        
-        self._socketIn.connect('tcp://%s:%s' % (self._ipAddress, self._portIn))
-        
+        self._socketIn.connect('tcp://%s:%s' % (self._ipAddress,self._portIn))
+        self._socketIn.setsockopt(zmq.SUBSCRIBE,'')
         self._socketOut = self._zmqContext.socket(zmq.PUB)
-        self._socketOut.connect('tcp://%s:%s' % (self._ipAddress, self._portOut))
+        self._socketOut.bind('tcp://%s:%s' % (self._ipAddress, self._portOut))
 
         while self.running is True:
             try:
