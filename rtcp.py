@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
 from bitstring import BitArray 
+from protocol import Protocol
 
-class RTCP(object):
+class RTCP(Protocol):
 	FALSE = '0b0'
 	TRUE = '0b1'
 	ZERO2 = '0b00'
@@ -29,12 +30,14 @@ class RTCP(object):
 		print("Done")
 		return ""
 
+	'''
 	# TODO Do we need negatives? If so, this needs more testing.
 	def bin_formater(self, value, length):
 		if value is None:
 			return ("0b" + bin(0).lstrip('-0b').zfill(length))
 		else:
 			return ("0b" + bin(value).lstrip('-0b').zfill(length))
+	'''
 
 	def to_bitarray(self):
 		# Version is always 2
@@ -43,12 +46,12 @@ class RTCP(object):
 		ba.append(self.bin_formater(self.count, 5))
 		ba.append(self.bin_formater(self.type, 8))
 		ba.append(self.bin_formater(self.length, 16))
-		# TODO Padding will be variable for data.  Get from value of length
+		# TODO Padding will be variable for data.	Get from value of length
 		ba.append(self.bin_formater(self.data, 32))
 		return ba
 
 	# TODO Currently sets each field to a bitstring. 
-	#      Should convert to actual values
+	#	    Should convert to actual values
 	def from_bitarray(self, ba):
 		bas = ba.bin
 		self.set_version(bas[0:2])
@@ -81,20 +84,23 @@ class RTCP(object):
 	# Setters
 
 	def set_version(self, v):
-		self.version = v
+		self.version = self.bin_to_uint(v)
 
 	def set_padding(self, p):
-		self.padding = p
+		self.padding = self.bin_to_bool(p)
 
 	def set_count(self, c):
-		self.count = c 
+		self.count = self.bin_to_uint(c)
 
 	def set_type(self, t):
-		self.type = t
+		self.type = self.bin_to_uint(t)
 
 	def set_length(self, l):
-		self.length = l
+		self.length = self.bin_to_uint(l)
 
+	# Don't think this should be converted here unless protocol 
+	# is flushed out to identify what type of data it is. 
+	# Application specific
 	def set_data(self, d):
 		self.data = d
 
