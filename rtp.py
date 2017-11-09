@@ -22,7 +22,7 @@ class RTP(object):
 		self.ssrc = kwargs.get('ssrc')
 		self.csrc = kwargs.get('csrc')
 
-	def str(self):
+	def __str__(self):
 		print("Printing out RTP values")
 		print(self.get_version())
 		print(self.get_padding())
