@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from bitstring import BitArray 
+import struct
 
 class RTP(object):
 	FALSE = '0b0'
@@ -35,6 +36,7 @@ class RTP(object):
 		print(self.get_ssrc())
 		print(self.get_csrc())
 		print("Done")
+		return ""
 
 	# TODO Do we need negatives? If so, this needs more testing.
 	def bin_formater(self, value, length):
@@ -42,6 +44,12 @@ class RTP(object):
 			return ("0b" + bin(0).lstrip('-0b').zfill(length))
 		else:
 			return ("0b" + bin(value).lstrip('-0b').zfill(length))
+
+	def bin_to_uint(self, value):
+		return BitArray(bin=value).uint
+
+	def bin_to_bool(self, value):
+		return BitArray(bin=value).bool
 
 	def to_bitarray(self):
 		# Version is always 2
@@ -107,32 +115,33 @@ class RTP(object):
 	# Setters
 
 	def set_version(self, v):
-		self.version = v
+		self.version = bin_to_uint(v)
 
 	def set_padding(self, p):
-		self.padding = p
+		self.padding = bin_to_bool(p)
 
 	def set_extension(self, e):
-		self.extension = e 
+		self.extension = bin_to_bool(e)
 
 	def set_csrc_count(self, cc):
-		self.csrc_count = cc 
+		self.csrc_count = bin_to_uint(cc)
 
 	def set_marker(self, m):
-		self.marker = m
+		self.marker = bin_to_bool(m)
 
 	def set_payload_type(self, pt):
-		self.payload_type = pt
+		self.payload_type = bin_to_uint(pt)
 
 	def set_seq_num(self, sn):
-		self.seq_num = sn
+		self.seq_num = bin_to_uint(sn)
 
+	# TODO add bin to timestamp conversion. Need format
 	def set_timestamp(self, t):
 		self.timestamp = t
 
 	def set_ssrc(self, ss):
-		self.ssrc = ss
+		self.ssrc = bin_to_uint(ss)
 
 	def set_csrc(self, cs):
-		self.csrc = cs
+		self.csrc = bin_to_uint(cs)
 
