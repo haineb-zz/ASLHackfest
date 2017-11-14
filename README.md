@@ -4,7 +4,7 @@ Adversarial Sciene Lab's repository for the DARPA SDR Hackfest
 Step to running flowgraph:
 
 1. Start flowgraph on RPI:
-	ssh root@192.168.10.5
+	ssh root@192.168.10.5 /
 	cd gr-uaslink/apps/
 	./uhd_psk_burst_control_rpi.grc
 	
