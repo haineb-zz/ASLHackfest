@@ -19,6 +19,9 @@ class Protocol(object):
 	def bin_formater(self, value, length):
 		if value is None:
 			return ("0b" + bin(0).lstrip('-0b').zfill(length))
+		if isinstance(value, float):
+			f = ''.join(bin(ord(c)).replace('0b', '').rjust(8, '0') for c in struct.pack('!f', value))
+			return "0b" + f
 		else:
 			return ("0b" + bin(value).lstrip('-0b').zfill(length))
 
@@ -39,23 +42,23 @@ class Protocol(object):
 		return self.to_bitarray().bytes
 
 
-        '''Overload with method to calculate header content and self-update as necessary.'''
-        def header_calculate_internal(self, payload):
-                pass
+		'''Overload with method to calculate header content and self-update as necessary.'''
+	def header_calculate_internal(self, payload):
+		pass
 
 
-        '''Returns the payload with new header on it.'''
-        @classmethod
-        def header_calculate(cls, payload):
-                mycls = cls()
-                mycls.header_calculate_internal(payload)
-                return mycls.to_bytearray() + payload
+	'''Returns the payload with new header on it.'''
+	@classmethod
+	def header_calculate(cls, payload):
+		mycls = cls()
+		mycls.header_calculate_internal(payload)
+		return mycls.to_bytearray() + payload
 
 
-        '''Return QoS instance and remaining payload.'''
-        @classmethod
-        def header_consume(cls, data):
-                mycls = cls()
-                length = len(mycls.to_bytearray())
-                mycls.from_bytearray(data[:length])
-                return (mycls, data[length:])
+	'''Return QoS instance and remaining payload.'''
+	@classmethod
+	def header_consume(cls, data):
+		mycls = cls()
+		length = len(mycls.to_bytearray())
+		mycls.from_bytearray(data[:length])
+		return (mycls, data[length:])
