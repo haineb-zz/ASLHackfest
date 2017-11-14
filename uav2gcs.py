@@ -24,7 +24,7 @@ class UAVtx(gateway.Gateway):
     def inputData(self, data):
         cls = qos.QoS.header_calculate(data)
         data = cls.to_bytearray() + data
-        self.outputData(data)
+        self.frame_tx.ingest_data(data)
 
 
 
