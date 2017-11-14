@@ -3,11 +3,14 @@ import qos
 
 
 
-class GCS2UAV(gateway.Gateway):
-    '''Overload with custom data wrapping/mangling here.'''
+class GCStx(gateway.Gateway):
     def codeData(self, data):
         cls = qos.QoS.header_calculate(data)
         data = cls.to_bytearray() + data
-        print(data) # PHY IS HERE!!!
+        return data
+
+
+class UAVrx(gateway.Gateway):
+    def codeData(self, data):
         cls, data = qos.QoS.header_consume(data)
         return data
