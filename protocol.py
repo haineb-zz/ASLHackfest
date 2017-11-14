@@ -29,14 +29,14 @@ class Protocol(object):
 		return BitArray(bin=value).bool
 
 
-        def to_bin(self):
-                return self.to_bitarray().bytes #FIXME: Needs padding integration?
+	# Requires protocol to implement from_bitarray()
+	def from_bytearray(self, byte_array):
+		bit_array = BitArray(bytes=byte_array)
+		self.from_bitarray(bit_array)
 
-
-        def from_bin(self, bin):
-                tmp = BitArray()
-                tmp.bytes = bin
-                self.from_bitarray(tmp)
+	# Requires protocol to implement to_bitarray()
+	def to_bytearray(self):
+		return self.to_bitarray().bytes
 
 
         '''Overload with method to calculate header content and self-update as necessary.'''
@@ -49,13 +49,13 @@ class Protocol(object):
         def header_calculate(cls, payload):
                 mycls = cls()
                 mycls.header_calculate_internal(payload)
-                return mycls.to_bin() + payload
+                return mycls.to_bytearray() + payload
 
 
         '''Return QoS instance and remaining payload.'''
         @classmethod
         def header_consume(cls, data):
                 mycls = cls()
-                length = len(mycls.to_bin())
-                mycls.from_bin(data[:length])
+                length = len(mycls.to_bytearray())
+                mycls.from_bytearray(data[:length])
                 return (mycls, data[length:])
