@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-import gateway
+
+import gcs2uav
+import uav2gcs
 import signal
 
 
@@ -9,8 +11,8 @@ class Runner(object):
         signal.signal(signal.SIGINT, self.terminate)
         
         self.gateways = {}
-        self.gateways['GCS'] = gateway.Gateway(portIn = 6128, portOut = 6129)
-        self.gateways['UAV'] = gateway.Gateway(portIn = 6130, portOut = 6131)
+        self.gateways['GCS2UAV'] = gcs2uav.GCS2UAV(portIn = 6128, portOut = 6129)
+        self.gateways['UAV2GCS'] = uav2gcs.UAV2GCS(portIn = 6130, portOut = 6131)
 
         for gw in self.gateways:
             self.gateways[gw].start()

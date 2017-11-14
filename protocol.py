@@ -49,7 +49,7 @@ class Protocol(object):
         def header_calculate(cls, payload):
                 mycls = cls()
                 mycls.header_calculate_internal(payload)
-                return mycls.to_bytearray() + payload
+                return mycls
 
 
         '''Return QoS instance and remaining payload.'''
