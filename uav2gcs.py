@@ -30,7 +30,7 @@ class UAVtx(gateway.Gateway):
 
 class GCSrx(gateway.Gateway):
     def __init__(self, *args, **kwargs):
-        self.frame_rx = NetworkLayerReceiveHandler(output_data_func = self.outputData)
+        self.frame_rx = NetworkLayerReceiveHandler(output_data_func = self.outputData_internal)
         gateway.Gateway.__init__(self, *args, **kwargs)
 
 
@@ -45,5 +45,9 @@ class GCSrx(gateway.Gateway):
 
 
     def inputData(self, data):
-        cls, data = qos.QoS.header_consume(data)
         self.frame_rx.ingest_data(data)
+
+
+    def outputData_internal(self, data):
+        cls, data = qos.QoS.header_consume(data)
+        self.outputData(data)

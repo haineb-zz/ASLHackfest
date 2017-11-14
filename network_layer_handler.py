@@ -38,7 +38,8 @@ class NetworkLayerReceiveHandler(threading.Thread, object):
             self.rx_class.do_receive()
             for q in self.out_queues:
                 if q.empty() is False:
-                    self.output_data_func(q.get())
+                    data = q.get()
+                    self.output_data_func(data)
 
 
 
@@ -60,7 +61,7 @@ class NetworkLayerTransmitHandler(threading.Thread, object):
 
 
     def ingest_data(self, data):
-        qoscls, payload = qos.QoS.header_consume(data)
+        qoscls = qos.QoS.header_calculate(data)
         pcp = qoscls.get_priority_code()
         self.in_queues[pcp].put(data)
     
@@ -75,4 +76,5 @@ class NetworkLayerTransmitHandler(threading.Thread, object):
         while (self.running is True):
             self.tx_class.do_transmit(mtu = 255)
             if self.out_queue.empty() is False:
-                self.output_data_func(self.out_queue.get())
+                data = self.out_queue.get()
+                self.output_data_func(data)
