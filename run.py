@@ -24,7 +24,7 @@ class Runner(object):
 
     def terminate(self, signal, frame):
         for gw in self.gateways:
-            self.gateways[gw].running = False
+            self.gateways[gw].stop()
 
         for gw in self.gateways:
             self.gateways[gw].join()

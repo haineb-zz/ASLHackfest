@@ -33,7 +33,7 @@ class Gateway(threading.Thread, object):
                 data = self._socketIn.recv()
             except zmq.Again:
                 continue
-            self._socketOut.send(self.codeData(data))
+            self.inputData(data)
 
 
     def stop(self):
@@ -41,6 +41,9 @@ class Gateway(threading.Thread, object):
 
 
     '''Overload with custom data wrapping/mangling here.'''
-    def codeData(self, data):
-        print(data)
-        return data
+    def inputData(self, data):
+        pass
+
+
+    def outputData(self, data):
+        self._socketOut.send(data)

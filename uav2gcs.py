@@ -1,16 +1,49 @@
 import gateway
 import qos
 
+from network_layer_handler import NetworkLayerReceiveHandler, NetworkLayerTransmitHandler
+
 
 
 class UAVtx(gateway.Gateway):
-    def codeData(self, data):
+    def __init__(self, *args, **kwargs):
+        self.frame_tx = NetworkLayerTransmitHandler(output_data_func = self.outputData)
+        gateway.Gateway.__init__(self, *args, **kwargs)
+
+
+    def run(self):
+        self.frame_tx.start()
+        gateway.Gateway.run(self)
+
+
+    def stop(self):
+        self.frame_tx.stop()
+        gateway.Gateway.stop(self)
+
+
+    def inputData(self, data):
         cls = qos.QoS.header_calculate(data)
         data = cls.to_bytearray() + data
-        return data
+        self.outputData(data)
+
 
 
 class GCSrx(gateway.Gateway):
-    def codeData(self, data):
+    def __init__(self, *args, **kwargs):
+        self.frame_rx = NetworkLayerReceiveHandler(output_data_func = self.outputData)
+        gateway.Gateway.__init__(self, *args, **kwargs)
+
+
+    def run(self):
+        self.frame_rx.start()
+        gateway.Gateway.run(self)
+
+
+    def stop(self):
+        self.frame_rx.stop()
+        gateway.Gateway.stop(self)
+
+
+    def inputData(self, data):
         cls, data = qos.QoS.header_consume(data)
-        return data
+        self.frame_rx.ingest_data(data)
