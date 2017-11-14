@@ -1,5 +1,6 @@
 #!/bin/env python3
 
+import binascii
 import struct
 import queue
 
@@ -79,9 +80,18 @@ class NetworkLayerReceive:
 
         """fragments structure
         {
-        idpacket, (len, [payload,payload2...])
+        idpacket, (len, [payload,payload2...)]
         }
         """
+
+
+        check = fragment.checksum
+        fragment.checksum = 0
+        if check != binascii.crc32(Frame.pack_frame(fragment))&0xFFFF:
+            print("BAD CHECK")
+            return None
+
+        # TODO: add time of last receive to tuple, and purge old values
 
         if iden in self.fragments:
             # TODO: is frame duplication possible????
@@ -102,7 +112,12 @@ class NetworkLayerReceive:
             frag_list = [fragment.payload[:fragment.length]]
             self.fragments[iden] = (total_fragments, frag_list)
 
-        if len(self.fragments[iden][1]) - 1 == self.fragments[iden][0]:
+        valid_frags = 0
+        for f in self.fragments[iden][1]:
+            if f:
+                valid_frags += 1
+
+        if valid_frags - 1 == self.fragments[iden][0]:
             # reassemble frame now that all fragments have been received.
             datagram = bytearray()
             for frag in self.fragments[iden][1]:
@@ -232,10 +247,12 @@ class NetworkLayerTransmit:
 
                     frame.addr = 0  # TODO: hardcoded for now
                     frame.qos = queue_num  # queue number refers to its priority, lower = better
-                    frame.checksum = 0  # TODO
+                    frame.checksum = 0
                     frame.fragment = frag
                     frame.packetid = iden
                     frame.NACK = False
+
+                    frame.checksum = binascii.crc32(Frame.pack_frame(frame))&0xFFFF
 
                     try:
                         self.out_queue.put_nowait(Frame.pack_frame(frame))
@@ -277,10 +294,12 @@ class NetworkLayerTransmit:
 
                     frame.addr = 0  # TODO: hardcoded for now
                     frame.qos = queue_num  # queue number refers to its priority, lower = better
-                    frame.checksum = 0  # TODO
+                    frame.checksum = 0
                     frame.fragment = 0
                     frame.packetid = iden
                     frame.NACK = False
+
+                    frame.checksum = binascii.crc32(Frame.pack_frame(frame))&0xFFFF
 
                     try:
                         self.out_queue.put_nowait(Frame.pack_frame(frame))
@@ -293,7 +312,10 @@ class NetworkLayerTransmit:
 
 
 def test():
+    import random
     queuePHY = queue.Queue()
+    queuePHY_shuffle = queue.Queue()
+
 
     queueA = queue.Queue()
     queueB = queue.Queue()
@@ -304,7 +326,7 @@ def test():
     receive_queues = [queueA_R, queueB_R]
 
     t = NetworkLayerTransmit(queuePHY, transmit_queues)
-    r = NetworkLayerReceive(queuePHY, receive_queues)
+    r = NetworkLayerReceive(queuePHY_shuffle, receive_queues)
 
     counter = 0
 
@@ -322,6 +344,15 @@ def test():
 
     while t.do_transmit(150):
         pass
+
+    phy_list = []
+    while not queuePHY.empty():
+        phy_list.append(queuePHY.get_nowait())
+
+    random.shuffle(phy_list)
+
+    for el in phy_list:
+        queuePHY_shuffle.put_nowait(el)
 
     r.process_receive_queue(None)
 
