@@ -24,7 +24,7 @@ class Gateway(threading.Thread, object):
         self._socketIn = self._zmqContext.socket(zmq.SUB)
         self._socketIn.RCVTIMEO = 100        
         self._socketIn.connect('tcp://%s:%s' % (self._ipAddress,self._portIn))
-        self._socketIn.setsockopt(zmq.SUBSCRIBE,'')
+        self._socketIn.setsockopt_string(zmq.SUBSCRIBE, '')
         self._socketOut = self._zmqContext.socket(zmq.PUB)
         self._socketOut.bind('tcp://%s:%s' % (self._ipAddress, self._portOut))
 
@@ -33,7 +33,7 @@ class Gateway(threading.Thread, object):
                 data = self._socketIn.recv()
             except zmq.Again:
                 continue
-            self._socketOut.send(self.codeData(data))
+            self.inputData(data)
 
 
     def stop(self):
@@ -41,6 +41,9 @@ class Gateway(threading.Thread, object):
 
 
     '''Overload with custom data wrapping/mangling here.'''
-    def codeData(self, data):
-        print(data)
-        return data
+    def inputData(self, data):
+        pass
+
+
+    def outputData(self, data):
+        self._socketOut.send(data)
