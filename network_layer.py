@@ -29,7 +29,8 @@ class Frame:
     def unpack_frame(bytearr):
         f = Frame()
 
-        (f.addr, qosbyte, f.length, f.packetid, f.fragment, f.checksum) = struct.unpack('!BBHBBH', bytearr)
+        (f.addr, qosbyte, f.length, f.packetid, f.fragment, f.checksum) = struct.unpack('!BBHBBH',
+                                                                                        bytearr[:Frame.headerlength])
 
         f.qos = qosbyte & 0x0F
         f.MF = qosbyte & 128 != 0
@@ -63,7 +64,7 @@ class NetworkLayerReceive:
         self.fragments = {}
 
         for _ in out_queues:
-            self.working_queues.append(queue.Queue)
+            self.working_queues.append(queue.Queue())
 
     def add_fragment(self, fragment):
         """
@@ -78,36 +79,50 @@ class NetworkLayerReceive:
 
         """fragments structure
         {
-        idpacket, (len, [(fragid, payload)])
+        idpacket, (len, [payload,payload2...])
         }
         """
 
         if iden in self.fragments:
-            self.fragments[iden][1].append((fragment.fragment, fragment.payload))
+            # TODO: is frame duplication possible????
+            frag_list = self.fragments[iden][1]
+
+            surplus = fragment.fragment + 1 - len(frag_list)
+            if surplus > 0:
+                frag_list.extend([None]*surplus)
+            frag_list[fragment.fragment] = fragment.payload[:fragment.length] # [:fragment.length] removes padding
+
             if not fragment.MF:
-                self.fragments[iden][0] = fragment.fragment
+                self.fragments[iden] = (fragment.fragment, frag_list)
         else:
             total_fragments = None
             if not fragment.MF:
                 total_fragments = fragment.fragment
 
-            frag_list = [(fragment.fragment, fragment.payload)]
+            frag_list = [fragment.payload[:fragment.length]]
             self.fragments[iden] = (total_fragments, frag_list)
 
-        if len(self.fragments[iden][1]) == self.fragments[iden][0]:
+        if len(self.fragments[iden][1]) - 1 == self.fragments[iden][0]:
             # reassemble frame now that all fragments have been received.
             datagram = bytearray()
             for frag in self.fragments[iden][1]:
-                datagram.extend(frag)
+                datagram += frag
+            del self.fragments[iden]
             return datagram
 
         return None
 
-    def do_receive(self):
-        max_frames_to_process = 1  # at some point we may want to process more then one frame per func call
-        frames_processed = 0
-
+    def process_receive_queue(self, maxnum):
+        """
+        :param maxnum: number of elements to receive, or None if no limit
+        :type maxnum: int
+        :return:
+        :rtype:
+        """
+        i = 0
         while not self.in_queue.empty():
+            if maxnum and i > maxnum:
+                break
             # TODO: maybe place a limit on this???
             try:
                 data = self.in_queue.get_nowait()
@@ -121,9 +136,13 @@ class NetworkLayerReceive:
             except queue.Full:
                 return False
 
+    def do_receive(self):
+        max_frames_to_process = 1  # at some point we may want to process more then one frame per func call
+        frames_processed = 0
+
         for queue_num, working_queue in enumerate(self.working_queues):
-            if frames_processed < max_frames_to_process:
-                return True
+            if frames_processed >= max_frames_to_process:
+                return frames_processed
 
             if not working_queue.empty():
                 try:
@@ -136,18 +155,19 @@ class NetworkLayerReceive:
                 if f.fragment == 0 and f.MF is False:
                     # single unfragmented frame pass along untouched
                     try:
-                        self.out_queues[queue_num].put_nowait(f.payload)
+                        self.out_queues[queue_num].put_nowait(f.payload[:f.length])
+                        frames_processed += 1
                     except queue.Full:
-                        # TODO: FIND out what happens when you do a .get without matching .task_done?
                         continue
                 else:
-                    datagram = self.add_fragment(data)
+                    datagram = self.add_fragment(f)
+                    frames_processed += 1
                     if datagram:
                         # this fragment caused a datagram to be completed
                         try:
                             self.out_queues[queue_num].put_nowait(datagram)
                         except queue.Full:
-                            return False
+                            return frames_processed
 
 
 class NetworkLayerTransmit:
@@ -165,7 +185,7 @@ class NetworkLayerTransmit:
         self.working_queues = []
 
         for _ in in_queues:
-            self.working_queues.append(queue.Queue)
+            self.working_queues.append(queue.Queue())
 
     def do_transmit(self, mtu):
         """
@@ -179,90 +199,147 @@ class NetworkLayerTransmit:
 
         # GOES THROUGH WORKING QUEUE 0, QUEUE 0, WORKING 1, QUEUE 1, working 2 ....
         for queue_num, (working_queue, in_queue) in enumerate(zip(self.working_queues, self.in_queues)):
-            if frames_processed < max_frames_to_process:
-                return
+            if frames_processed >= max_frames_to_process:
+                return frames_processed
 
-            while not working_queue.empty():
-                if frames_processed < max_frames_to_process:
-                    return True
+            while not working_queue.empty() or not in_queue.empty():
+                if not working_queue.empty():
+                    if frames_processed >= max_frames_to_process:
+                        return frames_processed
 
-                try:
-                    (iden, frag, data) = working_queue.get_nowait()
-                except queue.Empty:
-                    break
-                # the queue tuple contains information like the id number of the datagram, the fragment number
-                #  and the payload
-
-                frame = Frame()
-
-                if len(data) > payload_mtu:
                     try:
-                        working_queue.put_nowait((iden, frag + 1, data[payload_mtu:]))
-                    except queue.Full:
-                        return False
+                        (iden, frag, data) = working_queue.get_nowait()
+                    except queue.Empty:
+                        break
+                    # the queue tuple contains information like the id number of the datagram, the fragment number
+                    #  and the payload
 
-                    frame.payload = data[0:payload_mtu]
-                    frame.MF = True
-                    frame.length = payload_mtu
-                else:
-                    frame.length = len(data)
-                    frame.payload = data + b'\x00' * (payload_mtu - frame.length)
-                    frame.MF = False
+                    frame = Frame()
 
-                frame.addr = 0  # TODO: hardcoded for now
-                frame.qos = queue_num  # queue number refers to its priority, lower = better
-                frame.checksum = 0  # TODO
-                frame.fragment = frag
-                frame.packetid = iden
-                frame.NACK = False
+                    if len(data) > payload_mtu:
+                        try:
+                            working_queue.put_nowait((iden, frag + 1, data[payload_mtu:]))
+                        except queue.Full:
+                            return frames_processed
 
-                try:
-                    self.out_queue.put_nowait(Frame.pack_frame(frame))
-                    working_queue.task_done()
-                except queue.Full:
-                    return False
+                        frame.payload = data[0:payload_mtu]
+                        frame.MF = True
+                        frame.length = payload_mtu
+                    else:
+                        frame.length = len(data)
+                        frame.payload = data + b'\x00' * (payload_mtu - frame.length)
+                        frame.MF = False
 
-                frames_processed += 1
+                    frame.addr = 0  # TODO: hardcoded for now
+                    frame.qos = queue_num  # queue number refers to its priority, lower = better
+                    frame.checksum = 0  # TODO
+                    frame.fragment = frag
+                    frame.packetid = iden
+                    frame.NACK = False
 
-            while not in_queue.empty():
-                try:
-                    data = in_queue.get_nowait()
-                except queue.Empty:
-                    break
-
-                frame = Frame()
-
-                iden = self.idnum + 1
-
-                if iden > 255:
-                    iden = 0
-
-                if len(data) > payload_mtu:
                     try:
-                        # note adding to the working queue
-                        working_queue.put_nowait((iden, 1, data[payload_mtu:]))
+                        self.out_queue.put_nowait(Frame.pack_frame(frame))
+                        working_queue.task_done()
                     except queue.Full:
-                        return False
+                        return frames_processed
 
-                    frame.payload = data[0:payload_mtu]
-                    frame.MF = True
-                    frame.length = payload_mtu
-                else:
-                    frame.length = len(data)
-                    frame.payload = data + b'\x00' * (payload_mtu - frame.length)
-                    frame.MF = False
+                    frames_processed += 1
 
-                frame.addr = 0  # TODO: hardcoded for now
-                frame.qos = queue_num  # queue number refers to its priority, lower = better
-                frame.checksum = 0  # TODO
-                frame.fragment = 1
-                frame.packetid = iden
-                frame.NACK = False
+                if not in_queue.empty():
+                    try:
+                        data = in_queue.get_nowait()
+                    except queue.Empty:
+                        break
 
-                try:
-                    self.out_queue.put_nowait(Frame.pack_frame(frame))
-                    in_queue.task_done()
-                except queue.Full:
-                    return False
+                    frame = Frame()
 
-                frames_processed += 1
+                    self.idnum += 1
+
+                    iden = self.idnum
+
+                    if iden > 255:
+                        iden = 0
+
+                    if len(data) > payload_mtu:
+                        try:
+                            # note adding to the working queue
+                            working_queue.put_nowait((iden, 1, data[payload_mtu:]))
+                        except queue.Full:
+                            return frames_processed
+
+                        frame.payload = data[0:payload_mtu]
+                        frame.MF = True
+                        frame.length = payload_mtu
+                    else:
+                        frame.length = len(data)
+                        frame.payload = data + b'\x00' * (payload_mtu - frame.length)
+                        frame.MF = False
+
+                    frame.addr = 0  # TODO: hardcoded for now
+                    frame.qos = queue_num  # queue number refers to its priority, lower = better
+                    frame.checksum = 0  # TODO
+                    frame.fragment = 0
+                    frame.packetid = iden
+                    frame.NACK = False
+
+                    try:
+                        self.out_queue.put_nowait(Frame.pack_frame(frame))
+                        in_queue.task_done()
+                    except queue.Full:
+                        return frames_processed
+
+                    frames_processed += 1
+        return frames_processed
+
+
+def test():
+    queuePHY = queue.Queue()
+
+    queueA = queue.Queue()
+    queueB = queue.Queue()
+    transmit_queues = [queueA, queueB]
+
+    queueA_R = queue.Queue()
+    queueB_R = queue.Queue()
+    receive_queues = [queueA_R, queueB_R]
+
+    t = NetworkLayerTransmit(queuePHY, transmit_queues)
+    r = NetworkLayerReceive(queuePHY, receive_queues)
+
+    counter = 0
+
+    while counter < 20:
+        queueA.put_nowait(str.encode("A " + str(counter) + " " + "A" * 10 * counter))
+        counter += 1
+        queueB.put_nowait(str.encode("B " + str(counter) + " " + "B" * 10 * counter))
+        counter += 1
+        queueB.put_nowait(str.encode("B " + str(counter) + " " + "B" * 20 * counter))
+        counter += 1
+        queueA.put_nowait(str.encode("A " + str(counter) + " " + "A" * 40 * counter))
+        counter += 1
+        queueB.put_nowait(str.encode("B " + str(counter) + " " + "B" * 30 * counter))
+        counter += 1
+
+    while t.do_transmit(150):
+        pass
+
+    r.process_receive_queue(None)
+
+    for _ in range(1000):
+        r.do_receive()
+
+        while not queueA_R.empty():
+            try:
+                print(queueA_R.get_nowait())
+            except:
+                pass
+
+        while not queueB_R.empty():
+            try:
+                print(queueB_R.get_nowait())
+            except:
+                pass
+        pass
+
+if __name__ == "__main__":
+    test()
