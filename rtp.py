@@ -5,12 +5,6 @@ from protocol import Protocol
 import struct
 
 class RTP(Protocol):
-	FALSE = '0b0'
-	TRUE = '0b1'
-	ZERO2 = '0b00'
-	ONE2 = '0b01'
-	TWO2 = '0b10'
-	THREE2 = '0b11'
 	
 	def __init__(self, *args, **kwargs):
 		self.version = kwargs.get('version')
@@ -39,21 +33,6 @@ class RTP(Protocol):
 		print("Done")
 		return ""
 
-	'''
-	# TODO Do we need negatives? If so, this needs more testing.
-	def bin_formater(self, value, length):
-		if value is None:
-			return ("0b" + bin(0).lstrip('-0b').zfill(length))
-		else:
-			return ("0b" + bin(value).lstrip('-0b').zfill(length))
-
-	def bin_to_uint(self, value):
-		return BitArray(bin=value).uint
-
-	def bin_to_bool(self, value):
-		return BitArray(bin=value).bool
-	'''
-
 	def to_bitarray(self):
 		# Version is always 2
 		ba = BitArray(self.TWO2)	
@@ -61,7 +40,7 @@ class RTP(Protocol):
 		ba.append(self.TRUE) if self.extension else ba.append(self.FALSE)
 		ba.append(self.bin_formater(self.csrc_count, 4))
 		ba.append(self.TRUE) if self.marker else ba.append(self.FALSE)
-		ba.append(self.bin_formater(self.payload_type, 8))
+		ba.append(self.bin_formater(self.payload_type, 7))
 		ba.append(self.bin_formater(self.seq_num, 16))
 		ba.append(self.bin_formater(self.timestamp, 32))
 		ba.append(self.bin_formater(self.ssrc, 32))
@@ -82,6 +61,7 @@ class RTP(Protocol):
 		self.set_timestamp(bas[32:64])
 		self.set_ssrc(bas[64:96])
 		self.set_csrc(bas[96:128])
+
 
 	# Getters
 

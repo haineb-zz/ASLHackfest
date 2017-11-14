@@ -30,3 +30,12 @@ class Protocol(object):
 	def bin_to_bool(self, value):
 		return BitArray(bin=value).bool
 
+	# Requires protocol to implement from_bitarray()
+	def from_bytearray(self, byte_array):
+		bit_array = BitArray(bytes=byte_array)
+		self.from_bitarray(bit_array)
+
+	# Requires protocol to implement to_bitarray()
+	def to_bytearray(self):
+		return self.to_bitarray().bytes
+
