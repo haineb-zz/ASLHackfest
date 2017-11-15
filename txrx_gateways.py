@@ -5,7 +5,7 @@ from network_layer_handler import NetworkLayerReceiveHandler, NetworkLayerTransm
 
 
 
-class GCStx(gateway.Gateway):
+class TX_gateway(gateway.Gateway):
     def __init__(self, *args, **kwargs):
         self.frame_tx = NetworkLayerTransmitHandler(output_data_func = self.outputData)
         gateway.Gateway.__init__(self, *args, **kwargs)
@@ -28,7 +28,7 @@ class GCStx(gateway.Gateway):
 
 
 
-class UAVrx(gateway.Gateway):
+class RX_gateway(gateway.Gateway):
     def __init__(self, *args, **kwargs):
         self.frame_rx = NetworkLayerReceiveHandler(output_data_func = self.outputData_internal)
         gateway.Gateway.__init__(self, *args, **kwargs)
