@@ -2,13 +2,15 @@ import gateway
 import qos
 
 from network_layer_handler import NetworkLayerReceiveHandler, NetworkLayerTransmitHandler
+from rtp_handler import RTP_Handler
 
 
 
-class GCStx(gateway.Gateway):
+class TX_gateway(gateway.Gateway):
     def __init__(self, *args, **kwargs):
         self.frame_tx = NetworkLayerTransmitHandler(output_data_func = self.outputData)
         gateway.Gateway.__init__(self, *args, **kwargs)
+        self.rtp_handler = RTP_Handler()
 
 
     def run(self):
@@ -22,13 +24,15 @@ class GCStx(gateway.Gateway):
 
 
     def inputData(self, data):
+        rtp_header = self.rtp_handler.tx()
+        data = rtp_header + data
         cls = qos.QoS.header_calculate(data)
         data = cls.to_bytearray() + data
         self.frame_tx.ingest_data(data)
 
 
 
-class UAVrx(gateway.Gateway):
+class RX_gateway(gateway.Gateway):
     def __init__(self, *args, **kwargs):
         self.frame_rx = NetworkLayerReceiveHandler(output_data_func = self.outputData_internal)
         gateway.Gateway.__init__(self, *args, **kwargs)
@@ -50,4 +54,6 @@ class UAVrx(gateway.Gateway):
 
     def outputData_internal(self, data):
         cls, data = qos.QoS.header_consume(data)
+        rtp_header, data = self.rtp_handler.header_consume(data)
         self.outputData(data)
+
