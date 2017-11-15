@@ -24,7 +24,10 @@ class Gateway(threading.Thread, object):
         self._socketIn = self._zmqContext.socket(zmq.SUB)
         self._socketIn.RCVTIMEO = 100        
         self._socketIn.connect('tcp://%s:%s' % (self._ipAddress,self._portIn))
-        self._socketIn.setsockopt_string(zmq.SUBSCRIBE, '')
+        try:
+            self._socketIn.setsockopt(zmq.SUBSCRIBE, '') # python2
+        except TypeError:
+            self._socketIn.setsockopt_string(zmq.SUBSCRIBE, '') # python3, if this throws an exception... give up...
         self._socketOut = self._zmqContext.socket(zmq.PUB)
         self._socketOut.bind('tcp://%s:%s' % (self._ipAddress, self._portOut))
 
