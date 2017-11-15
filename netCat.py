@@ -8,7 +8,7 @@ import cPickle as pickle
 from PIL import Image
 
 class netCat:
-    def __init__(self, ip_address = '127.0.0.1', port = '6130'):
+    def __init__(self, ip_address = '127.0.0.1', port = '6127'):
 
         self._ip = ip_address
         self._port = port
@@ -16,7 +16,7 @@ class netCat:
         self.zmqc = zmq.Context()
 
 class netCatSender(netCat):
-    def __init__(self, img_fp, ip_address='127.0.0.1', port='6130'):
+    def __init__(self, img_fp, ip_address='127.0.0.1', port='6127'):
         netCat.__init__(self, ip_address, port)
 
         self._img_file = img_fp
@@ -36,7 +36,7 @@ class netCatSender(netCat):
             print("failed to send")
 
 class netCatReceiver(netCat):
-    def __init__(self, ip_address='127.0.0.1', port='6130'):
+    def __init__(self, ip_address='127.0.0.1', port='6127'):
         netCat.__init__(self, ip_address, port)
         self.shown = False
 
