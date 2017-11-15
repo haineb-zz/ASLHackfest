@@ -1,6 +1,10 @@
 # ASLHackfest
-Adversarial Sciene Lab's repository for the DARPA SDR Hackfest
+Adversarial Science Lab's repository for the DARPA SDR Hackfest
 
+# Installation
+pip3 install .
+
+# README for gr-uaslink?
 Step to running flowgraph:
 
 1. Start flowgraph on RPI:
