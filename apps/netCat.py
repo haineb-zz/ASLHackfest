@@ -2,7 +2,6 @@
 
 import zmq
 import sys
-import gateway
 import signal
 import cPickle as pickle
 from PIL import Image
