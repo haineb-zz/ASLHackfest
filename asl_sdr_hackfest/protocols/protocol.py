@@ -2,12 +2,12 @@ from bitstring import BitArray
 import struct
 
 class Protocol(object):
-        FALSE = '0b0'
-        TRUE = '0b1'
-        ZERO2 = '0b00'
-        ONE2 = '0b01'
-        TWO2 = '0b10'
-        THREE2 = '0b11'
+    FALSE = '0b0'
+    TRUE = '0b1'
+    ZERO2 = '0b00'
+    ONE2 = '0b01'
+    TWO2 = '0b10'
+    THREE2 = '0b11'
 
     def __init__(self, *args, **kwargs):
         self.version = kwargs.get('version')
