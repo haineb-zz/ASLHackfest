@@ -1,19 +1,17 @@
 import zmq
 import threading
 
+from asl_sdr_hackfest.zmq_sub import ZMQ_sub, ZMQ_sub_timeout
+from asl_sdr_hackfest.zmq_pub import ZMQ_pub
+
 
 
 class Gateway(threading.Thread, object):
     def __init__(self, portIn, portOut):
         self.running = False
 
-        self._ipAddress = '127.0.0.1'
-        self._portIn = portIn
-        self._portOut = portOut
-
-        self._zmqContext = zmq.Context()
-        self._socketIn = None
-        self._socketOut = None
+        self._ZMQ_in = ZMQ_sub(portIn = portIn)
+        self._ZMQ_out = ZMQ_pub(portOut = portOut)
 
         threading.Thread.__init__(self)
 
@@ -21,20 +19,10 @@ class Gateway(threading.Thread, object):
     def run(self):
         self.running = True
         
-        self._socketIn = self._zmqContext.socket(zmq.SUB)
-        self._socketIn.RCVTIMEO = 100        
-        self._socketIn.connect('tcp://%s:%s' % (self._ipAddress,self._portIn))
-        try:
-            self._socketIn.setsockopt(zmq.SUBSCRIBE, '') # python2
-        except TypeError:
-            self._socketIn.setsockopt_string(zmq.SUBSCRIBE, '') # python3, if this throws an exception... give up...
-        self._socketOut = self._zmqContext.socket(zmq.PUB)
-        self._socketOut.bind('tcp://%s:%s' % (self._ipAddress, self._portOut))
-
         while self.running is True:
             try:
-                data = self._socketIn.recv()
-            except zmq.Again:
+                data = self._ZMQ_in.recv()
+            except ZMQ_sub_timeout:
                 continue
             self.inputData(data)
 
@@ -49,4 +37,4 @@ class Gateway(threading.Thread, object):
 
 
     def outputData(self, data):
-        self._socketOut.send(data)
+        self._ZMQ_pub.send(data)
