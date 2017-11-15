@@ -5,6 +5,12 @@ from protocol import Protocol
 import struct
 
 class RTP(Protocol):
+	PAYLOAD_TYPES = {
+		'gsm' : 3,
+		'jpeg' : 26,
+		'mpv' : 32,
+		'h263' : 34
+	}
 	
 	def __init__(self, *args, **kwargs):
 		self.version = kwargs.get('version')
@@ -58,7 +64,7 @@ class RTP(Protocol):
 		self.set_marker(bas[8:9])
 		self.set_payload_type(bas[9:16])
 		self.set_seq_num(bas[16:32])
-		self.set_timestamp(bas[32:64])
+		self.set_timestamp(ba[32:64].float)
 		self.set_ssrc(bas[64:96])
 		self.set_csrc(bas[96:128])
 
@@ -120,6 +126,7 @@ class RTP(Protocol):
 
 	# TODO add bin to timestamp conversion. Need format
 	def set_timestamp(self, t):
+		
 		self.timestamp = t
 
 	def set_ssrc(self, ss):
