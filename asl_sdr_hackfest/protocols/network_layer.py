@@ -2,6 +2,7 @@
 
 import binascii
 import struct
+import time
 import queue
 
 
@@ -67,6 +68,15 @@ class NetworkLayerReceive:
         for _ in out_queues:
             self.working_queues.append(queue.Queue())
 
+    def clean_fragments(self, timeout):
+
+        key_list = list(self.fragments.keys())
+
+        for k in key_list:
+            if time.perf_counter() - self.fragments[k][2] > timeout:
+                print("Fragment dropped due to timeout {}".format(k))
+                del self.fragments[k]
+
     def add_fragment(self, fragment):
         """
         :param self:
@@ -80,7 +90,7 @@ class NetworkLayerReceive:
 
         """fragments structure
         {
-        idpacket, (len, [payload,payload2...)]
+        idpacket, [len, [payload,payload2...]]
         }
         """
 
@@ -88,13 +98,12 @@ class NetworkLayerReceive:
         check = fragment.checksum
         fragment.checksum = 0
         if check != binascii.crc32(Frame.pack_frame(fragment))&0xFFFF:
-            print("BAD CHECK")
+            print("Network Layer: BAD CHECKSUM ({}), packetid: {}".format(check, fragment.packetid) )
             return None
 
         # TODO: add time of last receive to tuple, and purge old values
 
         if iden in self.fragments:
-            # TODO: is frame duplication possible????
             frag_list = self.fragments[iden][1]
 
             surplus = fragment.fragment + 1 - len(frag_list)
@@ -102,15 +111,19 @@ class NetworkLayerReceive:
                 frag_list.extend([None]*surplus)
             frag_list[fragment.fragment] = fragment.payload[:fragment.length] # [:fragment.length] removes padding
 
+            self.fragments[iden][2] = time.perf_counter()
+
             if not fragment.MF:
-                self.fragments[iden] = (fragment.fragment, frag_list)
+                # self.fragments[iden] = [fragment.fragment, frag_list]
+                self.fragments[iden][0] = fragment.fragment
         else:
             total_fragments = None
             if not fragment.MF:
                 total_fragments = fragment.fragment
 
-            frag_list = [fragment.payload[:fragment.length]]
-            self.fragments[iden] = (total_fragments, frag_list)
+            frag_list = [None]*(fragment.fragment + 1)
+            frag_list[fragment.fragment] = fragment.payload[:fragment.length]
+            self.fragments[iden] = [total_fragments, frag_list, time.perf_counter()]
 
         valid_frags = 0
         for f in self.fragments[iden][1]:
@@ -151,9 +164,11 @@ class NetworkLayerReceive:
             except queue.Full:
                 return False
 
-    def do_receive(self):
+    def do_receive(self, timeout = 10):
         max_frames_to_process = 1  # at some point we may want to process more then one frame per func call
         frames_processed = 0
+
+        self.clean_fragments(timeout)
 
         for queue_num, working_queue in enumerate(self.working_queues):
             if frames_processed >= max_frames_to_process:

@@ -8,7 +8,6 @@ from asl_sdr_hackfest.protocols.rtp import RTP
 class RTP_Handler(object):
 	def __init__(self):
 		self.streams = dict()
-		print("RTP Handler")
 		self.INT32_MAX = 2147483647
 
 	def tx(self, ssrc, p_type):
@@ -41,8 +40,9 @@ class RTP_Handler(object):
 		r = RTP()
 		r.from_bytearray(rtp_bytearray)
 		if r.ssrc not in self.streams.keys():
-			self.new_rx_stream(r.payload_type)
+			self.new_rx_stream(r.ssrc, r.payload_type)
 		self.streams[r.ssrc].update(r.seq_num, r.timestamp)
+		return r
 
 
 	def new_tx_stream(self, p_type):
@@ -53,9 +53,12 @@ class RTP_Handler(object):
 			self.streams[new_ssrc] = Stream(new_ssrc, p_type, tx=True)
 		return new_ssrc
 		
-	def new_rx_stream(self, p_type):
+	def new_rx_stream(self, ssrc, p_type):
 		self.streams[ssrc] = Stream(ssrc, p_type, tx=False)
 
+	def header_consume(self, data):
+		rtp_header = self.rx(data[:RTP.HEADER_LENGTH])
+		return (rtp_header, data[RTP.HEADER_LENGTH:])
 
 class Stream(object):
 	def __init__(self, ssrc, p_type, tx=False):
@@ -83,7 +86,7 @@ class Stream(object):
 	For rx side.	Updates the last_seq_num and last_timestamp 
 	for the stream
 	'''	
-	def update(seq_num, ts):
+	def update(self, seq_num, ts):
 		self.last_seq_num = seq_num
 		self.last_timestamp = ts 
 
