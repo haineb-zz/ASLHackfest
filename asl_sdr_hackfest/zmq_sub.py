@@ -3,13 +3,13 @@ from zmq import Again as ZMQ_sub_timeout
 
 
 class ZMQ_sub(object):
-    def __init__(self, portIn):
+    def __init__(self, portIn, timeout = 100):
         self._ipAddress = '127.0.0.1'
         self._portIn = portIn
 
         self._zmqContext = zmq.Context()
         self._socketIn = self._zmqContext.socket(zmq.SUB)
-        self._socketIn.RCVTIMEO = 100        
+        self._socketIn.RCVTIMEO = timeout
         self._socketIn.connect('tcp://%s:%s' % (self._ipAddress,self._portIn))
         try:
             self._socketIn.setsockopt(zmq.SUBSCRIBE, '') # python2
