@@ -36,7 +36,7 @@ class Gateway(threading.Thread, object):
                 data = self._socketIn.recv()
             except zmq.Again:
                 continue
-            self.inputData(data)
+            self.inputData(bytearray(data))
 
 
     def stop(self):

@@ -15,7 +15,7 @@ class Routing(Protocol):
 
 
     def __str__(self):
-        print("Printing out RTP values")
+        print("Printing out Routing values")
         print(self.get_destination())
         print(self.get_transmitter())
         print(self.get_origin())
