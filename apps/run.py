@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from txrx_gateways import TX_gateway, RX_gateway
+from asl_sdr_hackfest.txrx_gateways import TX_gateway, RX_gateway
 import signal
 
 

@@ -1,5 +1,5 @@
 from bitstring import BitArray 
-from protocol import Protocol
+from asl_sdr_hackfest.protocols.protocol import Protocol
 
 
 

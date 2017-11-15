@@ -1,8 +1,8 @@
 import threading
 import queue
 
-import qos
-from network_layer import NetworkLayerReceive, NetworkLayerTransmit
+from asl_sdr_hackfest.protocols.qos import QoS
+from asl_sdr_hackfest.protocols.network_layer import NetworkLayerReceive, NetworkLayerTransmit
 
 
 
@@ -61,7 +61,7 @@ class NetworkLayerTransmitHandler(threading.Thread, object):
 
 
     def ingest_data(self, data):
-        qoscls = qos.QoS.header_calculate(data)
+        qoscls = QoS.header_calculate(data)
         pcp = qoscls.get_priority_code()
         self.in_queues[pcp].put(data)
     

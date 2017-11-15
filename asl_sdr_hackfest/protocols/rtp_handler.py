@@ -2,7 +2,7 @@
 import time
 import random
 import struct
-from rtp import RTP
+from asl_sdr_hackfest.protocols.rtp import RTP
 
 
 class RTP_Handler(object):

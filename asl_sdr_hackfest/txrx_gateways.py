@@ -1,24 +1,24 @@
-import gateway
-import qos
+from asl_sdr_hackfest.gateway import Gateway
+from asl_sdr_hackfest.protocols.qos import QoS
 
-from network_layer_handler import NetworkLayerReceiveHandler, NetworkLayerTransmitHandler
+from asl_sdr_hackfest.protocols.network_layer_handler import NetworkLayerReceiveHandler, NetworkLayerTransmitHandler
 
 
 
-class TX_gateway(gateway.Gateway):
+class TX_gateway(Gateway):
     def __init__(self, *args, **kwargs):
         self.frame_tx = NetworkLayerTransmitHandler(output_data_func = self.outputData)
-        gateway.Gateway.__init__(self, *args, **kwargs)
+        Gateway.__init__(self, *args, **kwargs)
 
 
     def run(self):
         self.frame_tx.start()
-        gateway.Gateway.run(self)
+        Gateway.run(self)
 
 
     def stop(self):
         self.frame_tx.stop()
-        gateway.Gateway.stop(self)
+        Gateway.stop(self)
 
 
     def inputData(self, data):
@@ -28,20 +28,20 @@ class TX_gateway(gateway.Gateway):
 
 
 
-class RX_gateway(gateway.Gateway):
+class RX_gateway(Gateway):
     def __init__(self, *args, **kwargs):
         self.frame_rx = NetworkLayerReceiveHandler(output_data_func = self.outputData_internal)
-        gateway.Gateway.__init__(self, *args, **kwargs)
+        Gateway.__init__(self, *args, **kwargs)
 
 
     def run(self):
         self.frame_rx.start()
-        gateway.Gateway.run(self)
+        Gateway.run(self)
 
 
     def stop(self):
         self.frame_rx.stop()
-        gateway.Gateway.stop(self)
+        Gateway.stop(self)
 
 
     def inputData(self, data):
