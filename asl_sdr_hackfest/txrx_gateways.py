@@ -24,7 +24,7 @@ class TX_gateway(Gateway):
 
 
     def inputData(self, data):
-        rtp_header = self.rtp_handler.tx()
+        rtp_header = self.rtp_handler.tx(1, 'gsm')
         data = rtp_header + data
         cls = QoS.header_calculate(data)
         data = cls.to_bytearray() + data
