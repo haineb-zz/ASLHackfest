@@ -41,8 +41,8 @@ class RTP_Handler(object):
         r.from_bytearray(rtp_bytearray)
         if r.ssrc not in self.streams.keys():
             self.new_rx_stream(r.ssrc, r.payload_type)
-        self.streams[r.ssrc].update(r.seq_num, r.timestamp)
-        return r
+        valid = self.streams[r.ssrc].update(r.seq_num, r.timestamp)
+        return (r, valid)
 
 
     def new_tx_stream(self, p_type, ssrc):
@@ -58,8 +58,8 @@ class RTP_Handler(object):
         self.streams[ssrc] = Stream(ssrc, p_type, tx=False)
 
     def header_consume(self, data):
-        rtp_header = self.rx(data[:RTP.HEADER_LENGTH])
-        return (rtp_header, data[RTP.HEADER_LENGTH:])
+        rtp_header_and_validity = self.rx(data[:RTP.HEADER_LENGTH])
+        return (rtp_header_and_validity, data[RTP.HEADER_LENGTH:])
 
 class Stream(object):
     def __init__(self, ssrc, p_type, tx=False):
@@ -121,24 +121,26 @@ class Stream(object):
         if ((self.last_seq_num == 0) and (self.last_timestamp == 10000)):
             self.last_seq_num = seq_num
             self.last_timestamp = ts
-            return
+            return True
         if self.check_seq_num_window(seq_num):
             self.last_seq_num = seq_num
         else:
             print("Received invalid sequence number for this stream")
             print("May want to drop it.")
-            #return
+            return False
         if self.check_timestamp_window(ts):
             self.last_timestamp = ts
+            return True
         elif (self.last_timestamp == 10000):
             print("Reinitialize stream ", self.ssrc)
             self.last_seq_num = seq_num
             self.last_timestamp = ts
+            return True
         else:
             # Outside timestamp window
             print("Received invalid timestamp for this stream")
             print("May want to drop it.")
-            #return
+            return True
 
     def check_seq_num_window(self, seq_num):
         win_top = self.last_seq_num + self.window_top
@@ -164,7 +166,7 @@ class Stream(object):
         ts_in = self.unpack_timestamp32(ts)
         if (time_top < self.UINT32_MAX):
             if ( ts_in > (time_top)):
-                print("Timestamp is too big")
+                #print("Timestamp is too big")
                 return True 
                 #return False
             #if ( ts < (struct.unpack('L', struct.pack('L', (self.last_timestamp - self.time_win_btm)) ))):
@@ -173,7 +175,7 @@ class Stream(object):
                 return False
         else:
             if ( ts_in > (time_top - self.UINT32_MAX)):
-                print("Timestamp is too big")
+                #print("Timestamp is too big")
                 return True 
                 #return False
             if ( ts_in < (self.unpack_timestamp32(self.last_timestamp) - self.time_win_btm)):
