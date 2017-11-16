@@ -16,7 +16,10 @@ class RTP(Protocol):
         #34 : 'h263'
     }
 
+    # HEADER_SIZE in bits
     HEADER_SIZE = 128
+    # HEADER_LENGTH in bytes
+    HEADER_LENGTH = 16
     
     def __init__(self, *args, **kwargs):
         self.version = kwargs.get('version')

@@ -87,7 +87,6 @@ class Postmaster(threading.Thread, object):
 
     def frameDeframed(self, data):
         cls, data = QoS.header_consume(data)
-
         rtp_header, data = self.rtp_handler_rx.header_consume(data)
         ssrc = rtp_header.get_ssrc()
 

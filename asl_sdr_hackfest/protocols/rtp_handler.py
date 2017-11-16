@@ -58,8 +58,8 @@ class RTP_Handler(object):
         self.streams[ssrc] = Stream(ssrc, p_type, tx=False)
 
     def header_consume(self, data):
-        rtp_header = self.rx(data[:RTP.HEADER_SIZE])
-        return (rtp_header, data[RTP.HEADER_SIZE:])
+        rtp_header = self.rx(data[:RTP.HEADER_LENGTH])
+        return (rtp_header, data[RTP.HEADER_LENGTH:])
 
 class Stream(object):
     def __init__(self, ssrc, p_type, tx=False):
