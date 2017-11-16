@@ -85,15 +85,20 @@ class Postmaster(threading.Thread, object):
 
     def frameDeframed(self, data):
         cls, data = QoS.header_consume(data)
-        rtp_header, data = self.rtp_handler_rx.header_consume(data)
-        ssrc = rtp_header.get_ssrc()
+        #rtp_header is an instance of RTP
+        rtp_header_and_validity, data = self.rtp_handler_rx.header_consume(data)
+        rtp_header = rtp_header_and_validity[0]
+        validity = rtp_header_and_validity[1]
+        # Seq number is valid, process data
+        if validity:
+            ssrc = rtp_header.get_ssrc()
+            for srv in self.services:
+                srv = self.services[srv]
+                if srv['type'] == 'client':
+                    conf = srv['config']
+                    if conf is not None and ssrc == conf['ssrc']:
+                        srv['service'].outputData(data)
 
-        for srv in self.services:
-            srv = self.services[srv]
-            if srv['type'] == 'client':
-                conf = srv['config']
-                if conf is not None and ssrc == conf['ssrc']:
-                    srv['service'].outputData(data)
 
 
     def stop(self):
