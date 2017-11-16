@@ -1,0 +1,97 @@
+import threading
+
+from asl_sdr_hackfest.service import Service
+
+from asl_sdr_hackfest.protocols.network_layer_handler import NetworkLayerReceiveHandler, NetworkLayerTransmitHandler
+from asl_sdr_hackfest.protocols.rtp_handler import RTP_Handler
+
+
+
+class Postmaster(threading.Thread, object):
+    def __init__(self, services_config):
+        self.running = False
+        
+        self.services = services_config
+
+        '''
+        # Sample service config:
+        # 'radio' is mandatory
+        services = {}
+        radio = {
+            'service': Service(inPort = 6128, outPort = 6129),
+            'type': 'radio',
+            'config': None,
+        }
+        services['radio'] = radio
+
+        mavlink_config = {
+            'qos': 0,
+            'ssrc': 0,
+        }
+        mavlink = {
+            'service': Service(inPort = 5056, outPort = 5057),
+            'type': 'client',
+            'config': mavlink_config,
+        }
+        services['mavlink'] = mavlink
+
+        cats_config = {
+            'qos': 15,
+            'ssrc': 1,
+        }
+        cats = {
+            'service': Service(inPort = 5058, outPort = 5059),
+            'type': 'client',
+            'config': cats_config,
+        }
+        services['cats'] = cats
+        '''
+
+        self.frame_rx = NetworkLayerReceiveHandler(output_data_func = self.frameDeframed)
+        self.frame_tx = NetworkLayerTransmitHandler(output_data_func = self.services['radio']['service'].outputData)
+
+        self.rtp_handler_rx = RTP_Handler()
+        self.rtp_handler_tx = RTP_Handler()
+
+        threading.Thread.__init__(self)
+
+
+    def run(self):
+        self.running = True
+        while self.running is True:
+            for srv in self.services:
+                srv = self.services[srv]
+                try:
+                    data = srv['service'].readData()
+                except ZMQ_sub_timeout:
+                    continue
+                if srv['type'] == 'radio':
+                    self.frame_rx.ingest_data(data)
+                elif src['type'] == 'client':
+                    rtp_header = self.rtp_handler.tx(srv['config']['ssrc'], 'gsm') # This is a byte array, not a header class
+                    data = rtp_header + data
+                    qos_header = QoS.header_calculate(data) # This is a header class, not a byte array
+                    qos_header.set_priority_code(srv['config']['qos'])
+                    data = qos_header.to_bytearray() + data
+                    self.frame_tx.ingest_data(data)
+
+
+    def frameDeframed(self, data):
+        cls, data = QoS.header_consume(data)
+
+        rtp_header, data = self.rtp_handler_rx.header_consume(data)
+        ssrc = rtp_header.get_ssrc()
+
+        for srv in self.services:
+            if ssrc == self.services[srv]['config']['ssrc']:
+                self.services[srv]['service'].outputData(data)
+
+
+    def stop(self):
+        self.running = False
+
+        for srv in self.services:
+            self.services[srv].stop()
+
+        for srv in self.services:
+            self.services[srv].join()

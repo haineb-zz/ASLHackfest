@@ -15,7 +15,7 @@ class Runner(object):
 
         services = {}
         radio = {
-            'service': Service(inPort = 6126, outPort = 6127),
+            'service': Service(inPort = 6128, outPort = 6129),
             'type': 'radio',
             'config': None,
         }
@@ -26,7 +26,7 @@ class Runner(object):
             'ssrc': 0,
         }
         mavlink = {
-            'service': Service(inPort = 6128, outPort = 6131),
+            'service': Service(inPort = 5056, outPort = 5057),
             'type': 'client',
             'config': mavlink_config,
         }
@@ -38,37 +38,6 @@ class Runner(object):
         }
         cats = {
             'service': Service(inPort = 5058, outPort = 5059),
-            'type': 'client',
-            'config': cats_config,
-        }
-        services['cats'] = cats
-        self.posts.append(Postmaster(services_config = services))
-
-        services = {}
-        radio = {
-            'service': Service(inPort = 6127, outPort = 6126),
-            'type': 'radio',
-            'config': None,
-        }
-        services['radio'] = radio
-
-        mavlink_config = {
-            'qos': 0,
-            'ssrc': 0,
-        }
-        mavlink = {
-            'service': Service(inPort = 6130, outPort = 6129),
-            'type': 'client',
-            'config': mavlink_config,
-        }
-        services['mavlink'] = mavlink
-
-        cats_config = {
-            'qos': 15,
-            'ssrc': 1,
-        }
-        cats = {
-            'service': Service(inPort = 5158, outPort = 5159),
             'type': 'client',
             'config': cats_config,
         }

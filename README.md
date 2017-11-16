@@ -9,6 +9,10 @@ pip3 install .
 ### python2
 sudo pip install .
 
+## Notional layering
+network_layer/qos/rtp
+network_layer/qos/udp
+
 ## README for gr-uaslink?
 Step to running flowgraph:
 
