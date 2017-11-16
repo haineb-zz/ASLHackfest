@@ -4,6 +4,7 @@ from asl_sdr_hackfest.service import Service
 
 from asl_sdr_hackfest.protocols.network_layer_handler import NetworkLayerReceiveHandler, NetworkLayerTransmitHandler
 from asl_sdr_hackfest.protocols.rtp_handler import RTP_Handler
+from asl_sdr_hackfest.protocols.qos import QoS
 
 
 
@@ -73,8 +74,8 @@ class Postmaster(threading.Thread, object):
                     continue
                 if srv['type'] == 'radio':
                     self.frame_rx.ingest_data(data)
-                elif src['type'] == 'client':
-                    rtp_header = self.rtp_handler.tx(srv['config']['ssrc'], 'gsm') # This is a byte array, not a header class
+                elif srv['type'] == 'client':
+                    rtp_header = self.rtp_handler_tx.tx(srv['config']['ssrc'], 'gsm') # This is a byte array, not a header class
                     data = rtp_header + data
                     qos_header = QoS.header_calculate(data) # This is a header class, not a byte array
                     qos_header.set_priority_code(srv['config']['qos'])
@@ -89,7 +90,8 @@ class Postmaster(threading.Thread, object):
         ssrc = rtp_header.get_ssrc()
 
         for srv in self.services:
-            if ssrc == self.services[srv]['config']['ssrc']:
+            conf = self.services[srv]['config']
+            if conf is not None and ssrc == conf['ssrc']:
                 self.services[srv]['service'].outputData(data)
 
 

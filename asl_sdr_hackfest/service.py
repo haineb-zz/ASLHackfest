@@ -45,4 +45,4 @@ class Service(threading.Thread, object):
 
 
     def outputData(self, data):
-        self._ZMQ_pub.send(data)
+        self._ZMQ_out.send(data)
