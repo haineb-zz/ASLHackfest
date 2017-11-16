@@ -27,7 +27,12 @@ class Protocol(object):
             print("Packed str = ", ("0b" + ''.join('{0:08b}'.format(x, 'b') for x in bytearray(value))))
             return ("0b" + ''.join('{0:08b}'.format(x, 'b') for x in bytearray(value)))
         else:
-            return ("0b" + bin(value).lstrip('-0b').zfill(length))
+            try:
+                ret = ("0b" + bin(value).lstrip('-0b').zfill(length))
+            except:
+                value = int.from_bytes(value, byteorder='big', signed=False)
+                ret = ("0b" + bin(value).lstrip('-0b').zfill(length))
+            return ret
 
     def bin_to_uint(self, value):
         try:
