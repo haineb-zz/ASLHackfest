@@ -75,8 +75,8 @@ class Postmaster(threading.Thread, object):
                 if srv['type'] == 'radio':
                     self.frame_rx.ingest_data(data)
                 elif srv['type'] == 'client':
-                    rtp_header = self.rtp_handler_tx.tx(srv['config']['ssrc'], 'gsm') # This is a byte array, not a header class
-                    data = rtp_header + data
+#                    rtp_header = self.rtp_handler_tx.tx(srv['config']['ssrc'], 'gsm') # This is a byte array, not a header class
+#                    data = rtp_header + data
                     qos_header = QoS.header_calculate(data) # This is a header class, not a byte array
                     qos_header.set_priority_code(srv['config']['qos'])
                     data = qos_header.to_bytearray() + data
@@ -86,13 +86,15 @@ class Postmaster(threading.Thread, object):
     def frameDeframed(self, data):
         cls, data = QoS.header_consume(data)
 
-        rtp_header, data = self.rtp_handler_rx.header_consume(data)
-        ssrc = rtp_header.get_ssrc()
+#        rtp_header, data = self.rtp_handler_rx.header_consume(data)
+#        ssrc = rtp_header.get_ssrc()
 
         for srv in self.services:
-            conf = self.services[srv]['config']
-            if conf is not None and ssrc == conf['ssrc']:
-                self.services[srv]['service'].outputData(data)
+            srv = self.services[srv]
+            if srv['type'] == 'client':
+#            conf = srv['config']
+#            if conf is not None and ssrc == conf['ssrc']:
+                srv['service'].outputData(data)
 
 
     def stop(self):
