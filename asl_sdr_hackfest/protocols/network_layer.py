@@ -73,7 +73,7 @@ class NetworkLayerReceive:
         key_list = list(self.fragments.keys())
 
         for k in key_list:
-            if time.perf_counter() - self.fragments[k][2] > timeout:
+            if time.time() - self.fragments[k][2] > timeout:
                 print("Fragment dropped due to timeout {}".format(k))
                 del self.fragments[k]
 
@@ -90,7 +90,7 @@ class NetworkLayerReceive:
 
         """fragments structure
         {
-        idpacket, [len, [payload,payload2...]]
+        idpacket, [len, [payload,payload2...], time]
         }
         """
 
@@ -101,8 +101,6 @@ class NetworkLayerReceive:
             print("Network Layer: BAD CHECKSUM ({}), packetid: {}".format(check, fragment.packetid) )
             return None
 
-        # TODO: add time of last receive to tuple, and purge old values
-
         if iden in self.fragments:
             frag_list = self.fragments[iden][1]
 
@@ -111,7 +109,7 @@ class NetworkLayerReceive:
                 frag_list.extend([None]*surplus)
             frag_list[fragment.fragment] = fragment.payload[:fragment.length] # [:fragment.length] removes padding
 
-            self.fragments[iden][2] = time.perf_counter()
+            self.fragments[iden][2] = time.time()
 
             if not fragment.MF:
                 # self.fragments[iden] = [fragment.fragment, frag_list]
@@ -123,7 +121,7 @@ class NetworkLayerReceive:
 
             frag_list = [None]*(fragment.fragment + 1)
             frag_list[fragment.fragment] = fragment.payload[:fragment.length]
-            self.fragments[iden] = [total_fragments, frag_list, time.perf_counter()]
+            self.fragments[iden] = [total_fragments, frag_list, time.time()]
 
         valid_frags = 0
         for f in self.fragments[iden][1]:
