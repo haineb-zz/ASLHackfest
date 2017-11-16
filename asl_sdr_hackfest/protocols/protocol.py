@@ -26,7 +26,11 @@ class Protocol(object):
             return ("0b" + bin(value).lstrip('-0b').zfill(length))
 
     def bin_to_uint(self, value):
-        return BitArray(bin=value).uint
+        try:
+            ret = BitArray(bin=value).uint
+        except AttributeError: # FIXME: Bad hack for typing issue
+            ret = BitArray(bin=bin(value)).uint
+        return ret
 
     def bin_to_bool(self, value):
         return BitArray(bin=value).bool
