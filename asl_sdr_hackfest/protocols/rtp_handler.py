@@ -6,87 +6,169 @@ from asl_sdr_hackfest.protocols.rtp import RTP
 
 
 class RTP_Handler(object):
-	def __init__(self):
-		self.streams = dict()
-		self.INT32_MAX = 2147483647
+    def __init__(self):
+        print "rtp_handler init"
+        print('rtp_handler init')
+        print("rtp_handler init")
+        self.streams = dict()
+        self.INT32_MAX = 2147483647
 
-	def tx(self, ssrc, p_type):
-		r = RTP()
-		# Fields we're unlikely to use during the hackfest
-		r.version = 2
-		r.padding = False
-		r.extension = False
-		r.csrc_count =	0
-		r.csrc = 0
+    def tx(self, ssrc, p_type):
+        print("TX in rtp_handler")
+        r = RTP()
+        # Fields we're unlikely to use during the hackfest
+        r.version = 2
+        r.padding = False
+        r.extension = False
+        r.csrc_count =    0
+        r.csrc = 0
 
-		# Fields the application will fill
-		r.marker = False	
+        # Fields the application will fill
+        r.marker = False    
 
-		# Fields the handler will fill
-		if ssrc not in self.streams.keys():
-			r.ssrc = self.new_tx_stream(p_type)
-		else:
-			r.ssrc = ssrc
+        # Fields the handler will fill
+        if ssrc not in self.streams.keys():
+            r.ssrc = self.new_tx_stream(p_type)
+        else:
+            r.ssrc = ssrc
 
-		r.seq_num = self.streams[r.ssrc].get_seq_num()
-		r.payload_type = self.streams[r.ssrc].payload_type
-		r.set_timestamp = self.streams[r.ssrc].get_timestamp()
-		#r.set_timestamp((struct.pack("!f", self.streams[r.ssrc].get_timestamp()))
+        r.seq_num = self.streams[r.ssrc].get_seq_num()
+        r.payload_type = self.streams[r.ssrc].payload_type
+        r.timestamp = self.streams[r.ssrc].create_timestamp32()
+        print("TX SIDE TIMESTAMP = ", r.timestamp)
+        #r.set_timestamp((struct.pack("!f", self.streams[r.ssrc].get_timestamp()))
 
-		return r.to_bytearray()
-
-
-	def rx(self, rtp_bytearray):
-		r = RTP()
-		r.from_bytearray(rtp_bytearray)
-		if r.ssrc not in self.streams.keys():
-			self.new_rx_stream(r.ssrc, r.payload_type)
-		self.streams[r.ssrc].update(r.seq_num, r.timestamp)
-		return r
+        return r.to_bytearray()
 
 
-	def new_tx_stream(self, p_type):
-		new_ssrc = random.randint(1, self.INT32_MAX)
-		if new_ssrc in self.streams.keys():
-			self.new_tx_stream(ssrc, p_type)
-		else:
-			self.streams[new_ssrc] = Stream(new_ssrc, p_type, tx=True)
-		return new_ssrc
-		
-	def new_rx_stream(self, ssrc, p_type):
-		self.streams[ssrc] = Stream(ssrc, p_type, tx=False)
+    def rx(self, rtp_bytearray):
+        r = RTP()
+        r.from_bytearray(rtp_bytearray)
+        if r.ssrc not in self.streams.keys():
+            self.new_rx_stream(r.ssrc, r.payload_type)
+        self.streams[r.ssrc].update(r.seq_num, r.timestamp)
+        print("RX SIDE TIMESTAMP = ", r.timestamp)
+        return r
 
-	def header_consume(self, data):
-		rtp_header = self.rx(data[:RTP.HEADER_LENGTH])
-		return (rtp_header, data[RTP.HEADER_LENGTH:])
+
+    def new_tx_stream(self, p_type):
+        new_ssrc = random.randint(1, self.INT32_MAX)
+        if new_ssrc in self.streams.keys():
+            self.new_tx_stream(p_type)
+        else:
+            self.streams[new_ssrc] = Stream(new_ssrc, p_type, tx=True)
+        return new_ssrc
+        
+    def new_rx_stream(self, ssrc, p_type):
+        self.streams[ssrc] = Stream(ssrc, p_type, tx=False)
+
+    def header_consume(self, data):
+        rtp_header = self.rx(data[:RTP.HEADER_SIZE])
+        return (rtp_header, data[RTP.HEADER_SIZE:])
 
 class Stream(object):
-	def __init__(self, ssrc, p_type, tx=False):
-		self.ssrc = ssrc
-		self.last_seq_num = 0
-		self.last_timestamp = time.time()
-		self.payload_type = RTP.PAYLOAD_TYPES[p_type]
-		self.tx = tx
+    def __init__(self, ssrc, p_type, tx=False):
+        self.ssrc = ssrc
+        self.last_seq_num = 0
+        self.last_timestamp = 10000 #self.create_timestamp32()
+        self.payload_type = RTP.PAYLOAD_TYPES[p_type]
+        self.tx = tx
+        self.UINT16_MAX = 65535
+        self.UINT32_MAX = 4294967295
+        self.window_top = 20
+        self.window_btm = 10
+        self.time_win_top = 250
+        self.time_win_btm = 100 
 
-	'''	
-	For tx side. Increments and returns seq number
-	'''	
-	def get_seq_num(self):
-		self.last_seq_num += 1
-		return self.last_seq_num
+    '''    
+    For tx side. Increments and returns seq number
+    '''    
+    def get_seq_num(self):
+        self.last_seq_num += 1
+        return self.last_seq_num
 
-	'''	
-	For tx side. Updates and returns timestamp
-	'''	
-	def get_timestamp(self):
-		self.last_timestamp = time.time()
-		return self.last_timestamp
+    '''    
+    For tx side. Updates and returns timestamp
+    '''    
+    def create_timestamp32(self):
+        t = (int(round(time.time()*1000)) & (2**32-1))
+        self.last_timestamp = struct.pack('!L', t)
+        print("create timestamp = ", self.last_timestamp)
+        return self.last_timestamp 
 
-	'''	
-	For rx side.	Updates the last_seq_num and last_timestamp 
-	for the stream
-	'''	
-	def update(self, seq_num, ts):
-		self.last_seq_num = seq_num
-		self.last_timestamp = ts 
+    '''    
+    For rx side.    Updates the last_seq_num and last_timestamp 
+    for the stream
+    '''    
+    def update(self, seq_num, ts):
+        if ((self.last_seq_num == 0) and (self.last_timestamp == 10000)):
+            print("Last seq_num and timestamps are defaults.")
+            print("Updating with new values.")
+            print("seq_num = ", seq_num)
+            print("timestamp = ", ts)
+            self.last_seq_num = seq_num
+            self.last_timestamp = ts
+            return
+        if self.check_seq_num_window(seq_num):
+            self.last_seq_num = seq_num
+        else:
+            # Outside seq num window
+            print("Received invalid sequence number for this stream")
+            print("seq_num = ", seq_num)
+            print("last_seq_num = ", self.last_seq_num)
+            #return
+        if self.check_timestamp_window(ts):
+            self.last_timestamp = ts
+        elif (self.last_timestamp == 10000):
+            print("Reinitialize")
+            print("ts = ", ts)
+            print("last_timestamp = ", self.last_timestamp)
+            self.last_seq_num = seq_num
+            self.last_timestamp = ts
+        else:
+            # Outside timestamp window
+            print("Received invalid timestamp for this stream")
+            #return
+
+    def check_seq_num_window(self, seq_num):
+        win_top = self.last_seq_num + self.window_top
+        print('win_top = ', win_top)
+        if (win_top < self.UINT16_MAX):
+            if ( seq_num > (win_top)):
+                print("Seq_num is too big")
+                return False
+            #if ( seq_num < (struct.unpack('H', struct.pack('h', (self.last_seq_num - self.window_btm)) )[0])):
+            if ( seq_num < (self.last_seq_num - self.window_btm)):
+                print("Seq_num is too small")
+                print("seq_num = ", seq_num)
+                print(struct.unpack('H', struct.pack('h', (self.last_seq_num - self.window_btm)) )[0])
+                print("last_seq_num = ", self.last_seq_num)
+                return False
+        else:
+            if ( seq_num > (win_top - self.UINT16_MAX)):
+                print("seq_num too big")
+                return False
+            if ( seq_num < (self.last_seq_num - self.window_btm)):
+                print("Seq_num is too small")
+                return False
+        return True
+
+    def check_timestamp_window(self, ts):
+        time_top = self.last_timestamp + self.time_win_top
+        if (time_top < self.UINT32_MAX):
+            if ( ts > (time_top)):
+                print("Timestamp is too big")
+                return False
+            #if ( ts < (struct.unpack('L', struct.pack('L', (self.last_timestamp - self.time_win_btm)) ))):
+            if ( ts < (self.last_timestamp - self.time_win_btm)):
+                print("Timestamp is too small")
+                return False
+        else:
+            if ( ts > (time_top - self.UINT32_MAX)):
+                print("Timestamp is too big")
+                return False
+            if ( ts < (self.last_timestamp - self.time_win_btm)):
+                print("Timestamp is too small")
+                return False
+        return True
 

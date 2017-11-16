@@ -54,6 +54,8 @@ class RTP(Protocol):
         ba.append(self.TRUE) if self.marker else ba.append(self.FALSE)
         ba.append(self.bin_formater(self.payload_type, 7))
         ba.append(self.bin_formater(self.seq_num, 16))
+        print("Timestamp type = ", type(self.timestamp))
+        print("Timestamp = ", self.timestamp)
         ba.append(self.bin_formater(self.timestamp, 32))
         ba.append(self.bin_formater(self.ssrc, 32))
         ba.append(self.bin_formater(self.csrc, 32))
@@ -70,7 +72,8 @@ class RTP(Protocol):
         self.set_marker(bas[8:9])
         self.set_payload_type(bas[9:16])
         self.set_seq_num(bas[16:32])
-        self.set_timestamp(ba[32:64].float)
+        self.set_timestamp(ba[32:64])
+        #self.set_timestamp(ba[32:64].float)
         self.set_ssrc(bas[64:96])
         self.set_csrc(bas[96:128])
 

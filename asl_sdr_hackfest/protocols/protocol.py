@@ -19,9 +19,13 @@ class Protocol(object):
     def bin_formater(self, value, length):
         if value is None:
             return ("0b" + bin(0).lstrip('-0b').zfill(length))
-        if isinstance(value, float):
+        elif isinstance(value, float):
             f = ''.join(bin(ord(c)).replace('0b', '').rjust(8, '0') for c in struct.pack('!f', value))
             return "0b" + f
+        #if (isinstance(value, str) and (length == 32)):
+        elif isinstance(value, str):
+            print("Packed str = ", ("0b" + ''.join('{0:08b}'.format(x, 'b') for x in bytearray(value)))a)
+            return ("0b" + ''.join('{0:08b}'.format(x, 'b') for x in bytearray(value)))
         else:
             return ("0b" + bin(value).lstrip('-0b').zfill(length))
 
