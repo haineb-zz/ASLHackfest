@@ -15,7 +15,7 @@ class Runner(object):
 
         services = {}
         radio = {
-            'service': Service(inPort = 6126, outPort = 6127),
+            'service': Service(portIn = 6126, portOut = 6127),
             'type': 'radio',
             'config': None,
         }
@@ -26,7 +26,7 @@ class Runner(object):
             'ssrc': 0,
         }
         mavlink = {
-            'service': Service(inPort = 6128, outPort = 6131),
+            'service': Service(portIn = 6128, portOut = 6131),
             'type': 'client',
             'config': mavlink_config,
         }
@@ -37,7 +37,7 @@ class Runner(object):
             'ssrc': 1,
         }
         cats = {
-            'service': Service(inPort = 5058, outPort = 5059),
+            'service': Service(portIn = 5058, portOut = 5059),
             'type': 'client',
             'config': cats_config,
         }
@@ -46,7 +46,7 @@ class Runner(object):
 
         services = {}
         radio = {
-            'service': Service(inPort = 6127, outPort = 6126),
+            'service': Service(portIn = 6127, portOut = 6126),
             'type': 'radio',
             'config': None,
         }
@@ -57,7 +57,7 @@ class Runner(object):
             'ssrc': 0,
         }
         mavlink = {
-            'service': Service(inPort = 6130, outPort = 6129),
+            'service': Service(portIn = 6130, portOut = 6129),
             'type': 'client',
             'config': mavlink_config,
         }
@@ -68,7 +68,7 @@ class Runner(object):
             'ssrc': 1,
         }
         cats = {
-            'service': Service(inPort = 5158, outPort = 5159),
+            'service': Service(portIn = 5158, portOut = 5159),
             'type': 'client',
             'config': cats_config,
         }
@@ -78,10 +78,12 @@ class Runner(object):
         for post in self.posts:
             post.start()
 
+        print('Postmasters initializing. Ctrl-C to stop.')
         signal.pause()
 
 
     def terminate(self, signal, frame):
+        print('Terminating...')
         for post in self.posts:
             post.stop()
         for post in self.posts:

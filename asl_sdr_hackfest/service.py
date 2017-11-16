@@ -39,7 +39,7 @@ class Service(threading.Thread, object):
 
     def readData(self):
         data = None
-        if not self._input_queue.is_empty():
+        if not self._input_queue.empty():
             data = self._input_queue.get()
         return data
 

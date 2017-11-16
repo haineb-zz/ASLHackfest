@@ -15,7 +15,7 @@ class Runner(object):
 
         services = {}
         radio = {
-            'service': Service(inPort = 6128, outPort = 6129),
+            'service': Service(portIn = 6128, portOut = 6129),
             'type': 'radio',
             'config': None,
         }
@@ -26,7 +26,7 @@ class Runner(object):
             'ssrc': 0,
         }
         mavlink = {
-            'service': Service(inPort = 5056, outPort = 5057),
+            'service': Service(portIn = 5056, portOut = 5057),
             'type': 'client',
             'config': mavlink_config,
         }
@@ -37,7 +37,7 @@ class Runner(object):
             'ssrc': 1,
         }
         cats = {
-            'service': Service(inPort = 5058, outPort = 5059),
+            'service': Service(portIn = 5058, portOut = 5059),
             'type': 'client',
             'config': cats_config,
         }
@@ -47,10 +47,12 @@ class Runner(object):
         for post in self.posts:
             post.start()
 
+        print('Postmaster initializing. Ctrl-C to stop.')
         signal.pause()
 
 
     def terminate(self, signal, frame):
+        print('Terminating...')
         for post in self.posts:
             post.stop()
         for post in self.posts:

@@ -18,7 +18,7 @@ class Postmaster(threading.Thread, object):
         # 'radio' is mandatory
         services = {}
         radio = {
-            'service': Service(inPort = 6128, outPort = 6129),
+            'service': Service(portIn = 6128, portOut = 6129),
             'type': 'radio',
             'config': None,
         }
@@ -29,7 +29,7 @@ class Postmaster(threading.Thread, object):
             'ssrc': 0,
         }
         mavlink = {
-            'service': Service(inPort = 5056, outPort = 5057),
+            'service': Service(portIn = 5056, portOut = 5057),
             'type': 'client',
             'config': mavlink_config,
         }
@@ -40,7 +40,7 @@ class Postmaster(threading.Thread, object):
             'ssrc': 1,
         }
         cats = {
-            'service': Service(inPort = 5058, outPort = 5059),
+            'service': Service(portIn = 5058, portOut = 5059),
             'type': 'client',
             'config': cats_config,
         }
@@ -58,12 +58,18 @@ class Postmaster(threading.Thread, object):
 
     def run(self):
         self.running = True
+
+        for srv in self.services:
+            self.services[srv]['service'].start()
+
+        self.frame_rx.start()
+        self.frame_tx.start()
+
         while self.running is True:
             for srv in self.services:
                 srv = self.services[srv]
-                try:
-                    data = srv['service'].readData()
-                except ZMQ_sub_timeout:
+                data = srv['service'].readData()
+                if data is None:
                     continue
                 if srv['type'] == 'radio':
                     self.frame_rx.ingest_data(data)
@@ -90,8 +96,12 @@ class Postmaster(threading.Thread, object):
     def stop(self):
         self.running = False
 
+        self.frame_rx.stop()
+        self.frame_tx.stop()
         for srv in self.services:
-            self.services[srv].stop()
+            self.services[srv]['service'].stop()
 
+        self.frame_rx.join()
+        self.frame_tx.join()
         for srv in self.services:
-            self.services[srv].join()
+            self.services[srv]['service'].join()
