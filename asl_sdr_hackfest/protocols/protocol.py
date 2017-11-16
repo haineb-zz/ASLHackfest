@@ -24,7 +24,7 @@ class Protocol(object):
             return "0b" + f
         #if (isinstance(value, str) and (length == 32)):
         elif isinstance(value, str):
-            print("Packed str = ", ("0b" + ''.join('{0:08b}'.format(x, 'b') for x in bytearray(value))))
+            #print("Packed str = ", ("0b" + ''.join('{0:08b}'.format(x, 'b') for x in bytearray(value))))
             return ("0b" + ''.join('{0:08b}'.format(x, 'b') for x in bytearray(value)))
         else:
             try:

@@ -28,8 +28,6 @@ class RTP_Handler(object):
         #else:
         #    r.ssrc = ssrc
         r.ssrc = ssrc
-        print('ssrc = ', ssrc)
-        print('r.ssrc = ', r.ssrc)
         r.seq_num = self.streams[r.ssrc].get_seq_num()
         r.payload_type = self.streams[r.ssrc].payload_type
         r.timestamp = self.streams[r.ssrc].create_timestamp32()
@@ -128,6 +126,7 @@ class Stream(object):
             self.last_seq_num = seq_num
         else:
             print("Received invalid sequence number for this stream")
+            print("May want to drop it.")
             #return
         if self.check_timestamp_window(ts):
             self.last_timestamp = ts
@@ -138,6 +137,7 @@ class Stream(object):
         else:
             # Outside timestamp window
             print("Received invalid timestamp for this stream")
+            print("May want to drop it.")
             #return
 
     def check_seq_num_window(self, seq_num):
@@ -160,13 +160,8 @@ class Stream(object):
         return True
 
     def check_timestamp_window(self, ts):
-        print("Check timestamp window")
-        print("Last timestamp = ", self.unpack_timestamp32(self.last_timestamp))
-        print("Incoming timestamp = ", self.unpack_timestamp32(ts))
-        print("UINT32_MAX = ", self.UINT32_MAX)
         time_top = self.unpack_timestamp32(self.last_timestamp) + self.time_win_top
         ts_in = self.unpack_timestamp32(ts)
-        print("Top of window = ", time_top)
         if (time_top < self.UINT32_MAX):
             if ( ts_in > (time_top)):
                 print("Timestamp is too big")

@@ -50,12 +50,18 @@ class RTP(Protocol):
         ba = BitArray(self.TWO2)    
         ba.append(self.TRUE) if self.padding else ba.append(self.FALSE)
         ba.append(self.TRUE) if self.extension else ba.append(self.FALSE)
+        #print("Format csrc_count")
         ba.append(self.bin_formater(self.csrc_count, 4))
         ba.append(self.TRUE) if self.marker else ba.append(self.FALSE)
+        #print("Format payload_type")
         ba.append(self.bin_formater(self.payload_type, 7))
+        #print("Format seq_num")
         ba.append(self.bin_formater(self.seq_num, 16))
+        #print("Format timestamp")
         ba.append(self.bin_formater(self.timestamp, 32))
+        #print("Format ssrc")
         ba.append(self.bin_formater(self.ssrc, 32))
+        #print("Format csrc")
         ba.append(self.bin_formater(self.csrc, 32))
         return ba
 
