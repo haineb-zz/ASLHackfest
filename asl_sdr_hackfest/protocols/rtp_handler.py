@@ -24,10 +24,12 @@ class RTP_Handler(object):
 
         # Fields the handler will fill
         if ssrc not in self.streams.keys():
-            r.ssrc = self.new_tx_stream(p_type)
-        else:
-            r.ssrc = ssrc
-
+            r.ssrc = self.new_tx_stream(p_type, ssrc)
+        #else:
+        #    r.ssrc = ssrc
+        r.ssrc = ssrc
+        print('ssrc = ', ssrc)
+        print('r.ssrc = ', r.ssrc)
         r.seq_num = self.streams[r.ssrc].get_seq_num()
         r.payload_type = self.streams[r.ssrc].payload_type
         r.timestamp = self.streams[r.ssrc].create_timestamp32()
@@ -45,13 +47,14 @@ class RTP_Handler(object):
         return r
 
 
-    def new_tx_stream(self, p_type):
-        new_ssrc = random.randint(1, self.INT32_MAX)
-        if new_ssrc in self.streams.keys():
-            self.new_tx_stream(p_type)
-        else:
-            self.streams[new_ssrc] = Stream(new_ssrc, p_type, tx=True)
-        return new_ssrc
+    def new_tx_stream(self, p_type, ssrc):
+        self.streams[ssrc] = Stream(ssrc, p_type, tx=True)
+        #new_ssrc = random.randint(1, self.INT32_MAX)
+        #if new_ssrc in self.streams.keys():
+        #    self.new_tx_stream(p_type)
+        #else:
+        #    self.streams[new_ssrc] = Stream(new_ssrc, p_type, tx=True)
+        #return new_ssrc
         
     def new_rx_stream(self, ssrc, p_type):
         self.streams[ssrc] = Stream(ssrc, p_type, tx=False)
@@ -92,6 +95,26 @@ class Stream(object):
         self.last_timestamp = struct.pack('!L', t)
         return self.last_timestamp 
 
+    def unpack_timestamp32(self, ts):
+        new_ts = 0
+        try:
+            new_ts = ts.uint
+            return new_ts
+        except AttributeError:
+            print("timestamp was not a BitArray")
+            pass
+        try:
+            new_ts = struct.unpack('!L', ts)
+            return new_ts
+        except stuct.error:
+            print("timestamp was not a valid struct")
+            pass
+        if isinstance(ts, int):
+            print("timestamp was always an int")
+            return ts
+        print("Weird timestamp. Returning zero")
+        return 0
+        
     '''    
     For rx side.    Updates the last_seq_num and last_timestamp 
     for the stream
@@ -137,20 +160,28 @@ class Stream(object):
         return True
 
     def check_timestamp_window(self, ts):
-        time_top = self.last_timestamp + self.time_win_top
+        print("Check timestamp window")
+        print("Last timestamp = ", self.unpack_timestamp32(self.last_timestamp))
+        print("Incoming timestamp = ", self.unpack_timestamp32(ts))
+        print("UINT32_MAX = ", self.UINT32_MAX)
+        time_top = self.unpack_timestamp32(self.last_timestamp) + self.time_win_top
+        ts_in = self.unpack_timestamp32(ts)
+        print("Top of window = ", time_top)
         if (time_top < self.UINT32_MAX):
-            if ( ts > (time_top)):
+            if ( ts_in > (time_top)):
                 print("Timestamp is too big")
-                return False
+                return True 
+                #return False
             #if ( ts < (struct.unpack('L', struct.pack('L', (self.last_timestamp - self.time_win_btm)) ))):
-            if ( ts < (self.last_timestamp - self.time_win_btm)):
+            if ( ts_in < (self.unpack_timestamp32(self.last_timestamp) - self.time_win_btm)):
                 print("Timestamp is too small")
                 return False
         else:
-            if ( ts > (time_top - self.UINT32_MAX)):
+            if ( ts_in > (time_top - self.UINT32_MAX)):
                 print("Timestamp is too big")
-                return False
-            if ( ts < (self.last_timestamp - self.time_win_btm)):
+                return True 
+                #return False
+            if ( ts_in < (self.unpack_timestamp32(self.last_timestamp) - self.time_win_btm)):
                 print("Timestamp is too small")
                 return False
         return True
