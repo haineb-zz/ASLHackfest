@@ -19,7 +19,6 @@ class RTP(Protocol):
     HEADER_SIZE = 128
     
     def __init__(self, *args, **kwargs):
-        print("RTP init")
         self.version = kwargs.get('version')
         self.padding = kwargs.get('padding')
         self.extension = kwargs.get('extension')
@@ -48,7 +47,6 @@ class RTP(Protocol):
 
     def to_bitarray(self):
         # Version is always 2
-        print("RTP to bitarray")
         ba = BitArray(self.TWO2)    
         ba.append(self.TRUE) if self.padding else ba.append(self.FALSE)
         ba.append(self.TRUE) if self.extension else ba.append(self.FALSE)
@@ -56,8 +54,6 @@ class RTP(Protocol):
         ba.append(self.TRUE) if self.marker else ba.append(self.FALSE)
         ba.append(self.bin_formater(self.payload_type, 7))
         ba.append(self.bin_formater(self.seq_num, 16))
-        print("Timestamp type = ", type(self.timestamp))
-        print("Timestamp = ", self.timestamp)
         ba.append(self.bin_formater(self.timestamp, 32))
         ba.append(self.bin_formater(self.ssrc, 32))
         ba.append(self.bin_formater(self.csrc, 32))
