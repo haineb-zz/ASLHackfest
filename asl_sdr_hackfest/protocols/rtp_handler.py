@@ -7,9 +7,6 @@ from asl_sdr_hackfest.protocols.rtp import RTP
 
 class RTP_Handler(object):
     def __init__(self):
-        print "rtp_handler init"
-        print('rtp_handler init')
-        print("rtp_handler init")
         self.streams = dict()
         self.INT32_MAX = 2147483647
 
@@ -44,10 +41,11 @@ class RTP_Handler(object):
     def rx(self, rtp_bytearray):
         r = RTP()
         r.from_bytearray(rtp_bytearray)
+        print("Rx received ssrc = ", r.ssrc)
+        print("Rx received time = ", r.timestamp)
         if r.ssrc not in self.streams.keys():
             self.new_rx_stream(r.ssrc, r.payload_type)
         self.streams[r.ssrc].update(r.seq_num, r.timestamp)
-        print("RX SIDE TIMESTAMP = ", r.timestamp)
         return r
 
 
@@ -71,7 +69,10 @@ class Stream(object):
         self.ssrc = ssrc
         self.last_seq_num = 0
         self.last_timestamp = 10000 #self.create_timestamp32()
-        self.payload_type = RTP.PAYLOAD_TYPES[p_type]
+        if isinstance(p_type, int):
+            self.payload_type = p_type
+        else:
+            self.payload_type = RTP.PAYLOAD_TYPES[p_type]
         self.tx = tx
         self.UINT16_MAX = 65535
         self.UINT32_MAX = 4294967295

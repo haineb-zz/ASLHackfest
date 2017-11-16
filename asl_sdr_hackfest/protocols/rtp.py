@@ -7,18 +7,19 @@ import struct
 class RTP(Protocol):
     PAYLOAD_TYPES = {
         'gsm' : 3,
-        3 : 'gsm',
+        #3 : 'gsm',
         'jpeg' : 26,
-        26 : 'jpeg',
+        #26 : 'jpeg',
         'mpv' : 32,
-        32 : 'mpv',
-        'h263' : 34,
-        34 : 'h263'
+        #32 : 'mpv',
+        'h263' : 34#,
+        #34 : 'h263'
     }
 
     HEADER_SIZE = 128
     
     def __init__(self, *args, **kwargs):
+        print("RTP init")
         self.version = kwargs.get('version')
         self.padding = kwargs.get('padding')
         self.extension = kwargs.get('extension')
@@ -47,6 +48,7 @@ class RTP(Protocol):
 
     def to_bitarray(self):
         # Version is always 2
+        print("RTP to bitarray")
         ba = BitArray(self.TWO2)    
         ba.append(self.TRUE) if self.padding else ba.append(self.FALSE)
         ba.append(self.TRUE) if self.extension else ba.append(self.FALSE)
