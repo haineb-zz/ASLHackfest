@@ -12,9 +12,9 @@ setup(
     license = "LGPL v2.1",
     url = "https://github.com/haineb/ASLHackfest",
     packages = find_packages(),
-    install_requires=[
-        'bitstring',
-        'zmq',
-        'numpy',
-    ],
+#    install_requires=[
+#        'bitstring',
+#        'zmq',
+#        'numpy',
+#    ],
 )
