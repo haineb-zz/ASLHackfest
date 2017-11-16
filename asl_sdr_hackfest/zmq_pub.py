@@ -1,4 +1,5 @@
 import zmq
+import numpy, pmt
 
 
 
@@ -13,4 +14,8 @@ class ZMQ_pub(object):
 
 
     def send(self, data):
-        self._socketOut.send(data)
+        car = pmt.make_dict()
+        data = bytes(data)
+        cdr = pmt.to_pmt(data)
+        pdu = pmt.cons(car, cdr)
+        self._socketOut.send(pmt.serialize_str(pdu))

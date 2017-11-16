@@ -3,9 +3,6 @@ Adversarial Science Lab's repository for the DARPA SDR Hackfest
 
 ## Installation
 
-### python3
-pip3 install .
-
 ### python2
 sudo pip install .
 
