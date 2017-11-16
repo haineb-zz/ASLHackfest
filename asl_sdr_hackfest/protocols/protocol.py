@@ -42,7 +42,7 @@ class Protocol(object):
 
     # Requires protocol to implement to_bitarray()
     def to_bytearray(self):
-        return self.to_bitarray().bytes
+        return bytearray(self.to_bitarray().bytes)
 
 
     '''Overload with method to calculate header content and self-update as necessary.'''

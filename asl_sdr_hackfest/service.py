@@ -26,7 +26,7 @@ class Service(threading.Thread, object):
                 data = self._ZMQ_in.recv()
             except ZMQ_sub_timeout:
                 continue
-            self.inputData(data)
+            self.inputData(bytearray(data))
 
 
     def stop(self):
