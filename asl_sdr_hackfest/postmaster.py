@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import threading
 
 from asl_sdr_hackfest.service import Service
