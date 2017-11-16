@@ -11,7 +11,6 @@ class RTP_Handler(object):
         self.INT32_MAX = 2147483647
 
     def tx(self, ssrc, p_type):
-        print("TX in rtp_handler")
         r = RTP()
         # Fields we're unlikely to use during the hackfest
         r.version = 2
@@ -32,7 +31,6 @@ class RTP_Handler(object):
         r.seq_num = self.streams[r.ssrc].get_seq_num()
         r.payload_type = self.streams[r.ssrc].payload_type
         r.timestamp = self.streams[r.ssrc].create_timestamp32()
-        print("TX SIDE TIMESTAMP = ", r.timestamp)
         #r.set_timestamp((struct.pack("!f", self.streams[r.ssrc].get_timestamp()))
 
         return r.to_bytearray()
@@ -41,8 +39,6 @@ class RTP_Handler(object):
     def rx(self, rtp_bytearray):
         r = RTP()
         r.from_bytearray(rtp_bytearray)
-        print("Rx received ssrc = ", r.ssrc)
-        print("Rx received time = ", r.timestamp)
         if r.ssrc not in self.streams.keys():
             self.new_rx_stream(r.ssrc, r.payload_type)
         self.streams[r.ssrc].update(r.seq_num, r.timestamp)
@@ -94,7 +90,6 @@ class Stream(object):
     def create_timestamp32(self):
         t = (int(round(time.time()*1000)) & (2**32-1))
         self.last_timestamp = struct.pack('!L', t)
-        print("create timestamp = ", self.last_timestamp)
         return self.last_timestamp 
 
     '''    
@@ -103,27 +98,18 @@ class Stream(object):
     '''    
     def update(self, seq_num, ts):
         if ((self.last_seq_num == 0) and (self.last_timestamp == 10000)):
-            print("Last seq_num and timestamps are defaults.")
-            print("Updating with new values.")
-            print("seq_num = ", seq_num)
-            print("timestamp = ", ts)
             self.last_seq_num = seq_num
             self.last_timestamp = ts
             return
         if self.check_seq_num_window(seq_num):
             self.last_seq_num = seq_num
         else:
-            # Outside seq num window
             print("Received invalid sequence number for this stream")
-            print("seq_num = ", seq_num)
-            print("last_seq_num = ", self.last_seq_num)
             #return
         if self.check_timestamp_window(ts):
             self.last_timestamp = ts
         elif (self.last_timestamp == 10000):
-            print("Reinitialize")
-            print("ts = ", ts)
-            print("last_timestamp = ", self.last_timestamp)
+            print("Reinitialize stream ", self.ssrc)
             self.last_seq_num = seq_num
             self.last_timestamp = ts
         else:
@@ -133,7 +119,6 @@ class Stream(object):
 
     def check_seq_num_window(self, seq_num):
         win_top = self.last_seq_num + self.window_top
-        print('win_top = ', win_top)
         if (win_top < self.UINT16_MAX):
             if ( seq_num > (win_top)):
                 print("Seq_num is too big")
@@ -141,9 +126,6 @@ class Stream(object):
             #if ( seq_num < (struct.unpack('H', struct.pack('h', (self.last_seq_num - self.window_btm)) )[0])):
             if ( seq_num < (self.last_seq_num - self.window_btm)):
                 print("Seq_num is too small")
-                print("seq_num = ", seq_num)
-                print(struct.unpack('H', struct.pack('h', (self.last_seq_num - self.window_btm)) )[0])
-                print("last_seq_num = ", self.last_seq_num)
                 return False
         else:
             if ( seq_num > (win_top - self.UINT16_MAX)):
