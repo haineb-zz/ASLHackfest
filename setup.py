@@ -11,11 +11,10 @@ setup(
     description = ("Adversarial Science Lab's code for DARPA's SDR Hackfest."),
     license = "LGPL v2.1",
     url = "https://github.com/haineb/ASLHackfest",
-#    package_dir = {'asl_sdr_hackfest': 'src'},
-#    package_dir = {'asl_sdr_hackfest': 'src', 'asl_sdr_hackfest.protocols': 'src/protocols'},
     packages = find_packages(),
     install_requires=[
         'bitstring',
         'zmq',
+        'numpy',
     ],
 )

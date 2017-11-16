@@ -1,6 +1,8 @@
 import zmq
 from zmq import Again as ZMQ_sub_timeout
+import numpy, pmt
 
+import binascii
 
 class ZMQ_sub(object):
     def __init__(self, portIn, timeout = 100):
@@ -18,4 +20,8 @@ class ZMQ_sub(object):
 
 
     def recv(self):
-        return self._socketIn.recv()
+        msg = self._socketIn.recv()
+        pdu = pmt.deserialize_str(msg)
+        cdr = pmt.to_python(pmt.cdr(pdu))
+        cdr = numpy.getbuffer(cdr)
+        return cdr

@@ -7,17 +7,17 @@ import queue
 
 
 class Frame:
-    headerlength = 8
+    headerlength = 7
     # addr, qos, len, len, id, fragment, check, check
-    addr_pos = 0
-    qos_pos = 1
-    len_pos = 2
-    packetid_pos = 4
-    fragment_pos = 5
-    checksum_pos = 6
+    # addr_pos = 0
+    qos_pos = 0
+    len_pos = 1
+    packetid_pos = 3
+    fragment_pos = 4
+    checksum_pos = 5
 
     def __init__(self):
-        self.addr = None
+        self.addr = None # None
         self.qos = None
         self.MF = None
         self.NACK = None
@@ -31,9 +31,10 @@ class Frame:
     def unpack_frame(bytearr):
         f = Frame()
 
-        (f.addr, qosbyte, f.length, f.packetid, f.fragment, f.checksum) = struct.unpack('!BBHBBH',
+        (qosbyte, f.length, f.packetid, f.fragment, f.checksum) = struct.unpack('!BHBBH',
                                                                                         bytearr[:Frame.headerlength])
 
+        f.addr = 0
         f.qos = qosbyte & 0x0F
         f.MF = qosbyte & 128 != 0
         f.NACK = qosbyte & 64 != 0
@@ -46,7 +47,7 @@ class Frame:
         # everything should be in network order (big endian)
         qosbyte = (f.qos & 0x0F) | (128 if f.MF else 0) | (64 if f.NACK else 0)
 
-        strut = struct.pack('!BBHBBH', f.addr, qosbyte, f.length, f.packetid, f.fragment, f.checksum)
+        strut = struct.pack('!BHBBH', qosbyte, f.length, f.packetid, f.fragment, f.checksum)
 
         return strut + f.payload
 
