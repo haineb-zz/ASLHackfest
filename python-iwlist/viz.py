@@ -24,3 +24,5 @@ class Viz(object):
 
     def run(self):
         N = len(access_points)
+        fig, ax = plt.subplots(ncols=11)
+        plt.bar()
