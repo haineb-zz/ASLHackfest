@@ -24,15 +24,12 @@ class netCatSender(netCat):
         self.pub.bind('tcp://%s:%s' % (self._ip, self._port))
 
     def send(self):
-        try:
-            img = Image.open(self._img_file)
-            img_pickled = pickle.dumps(img)
+        img = Image.open(self._img_file)
+        img_pickled = pickle.dumps(img)
 
-            print("sending {fp}".format(fp=self._img_file))
-            self.pub.send(img_pickled)
-            print("done sending {fp}".format(fp=self._img_file))
-        except:
-            print("failed to send")
+        print("sending {fp}".format(fp=self._img_file))
+        self.pub.send(img_pickled)
+        print("done sending {fp}".format(fp=self._img_file))
 
 class netCatReceiver(netCat):
     def __init__(self, ip_address='127.0.0.1', port='6127'):
@@ -63,35 +60,45 @@ class netCatLauncher:
             self.receiver = netCatReceiver()
         # usage: netCat.py (image_file)
         elif len(sys.argv) == 2:
-            self.sender = netCatSender(sys.argv[1])
+            self.sender = netCatSender(img_fp=sys.argv[1])
             self.receiver = None
         # usage: netCat.py (ip, port)
         elif len(sys.argv) == 3:
             self.sender = None
-            self.receiver = netCatReceiver()
+            self.receiver = netCatReceiver(\
+                ip_address=sys.argv[1],    \
+                port=sys.argv[2]           \
+            )
         # usage: netCat.py (image_file, ip, port)
         elif len(sys.argv) == 4:
-            self.sender = netCatSender(sys.argv[1])
+            self.sender = netCatSender(\
+                img_fp=sys.argv[1],    \
+                ip_address=sys.argv[2],\
+                port=sys.argv[3]       \
+            )
             self.receiver = None
         else:
             print("receive: ./netCat.py \n transmit: ./netCat.py cat_image")
 
-
     def run(self):
-        if len(sys.argv) > 1:
-            self.sender.send()
-        else:
-            self.receiver.recv()
+        while True:
+            try:
+                if self.sender is not None:
+                    self.sender.send()
+                if self.receiver is not None:
+                    self.receiver.recv()
+            except KeyboardInterrupt:
+                nc.sit()
+                break
+            except:
+                if self.sender is not None:
+                    print "failed to send"
+                if self.receive is not None:
+                    print "failed to receive"
 
     def sit(self):
         print("good kitty!")
 
 if __name__ == "__main__":
     nc = netCatLauncher()
-    while True:
-        try:
-            nc.run()
-        except KeyboardInterrupt:
-            # BUG: sender will not call sit() on SIGINT
-            nc.sit()
-            break
+    nc.run()
