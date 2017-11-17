@@ -4,29 +4,46 @@
 import iwlist
 import time
 import psutil
+import pmt
 import struct
+import zmq
+
+ZMQ_IP = '127.0.0.1'
+ZMQ_PORT = 5058
+
+zmq_context = zmq.Context()
+socketOut = zmq_context.socket(zmq.PUB)
+socketOut.bind('tcp://%s:%s' % (ZMQ_IP, ZMQ_PORT))
+
+
+def scanner_send(data):
+    car = pmt.make_dict()
+    data = bytes(data)
+    cdr = pmt.to_pmt(data)
+    pdu = pmt.cons(car, cdr)
+    socketOut.send(pmt.serialize_str(pdu))
 
 
 def pack_ap(ap):
     #s = struct.Struct()
-    s = struct.pack('!b', int(ap['signal_level_dBm']))
-    if ap['encryption'] is 'yes':
-        s += struct.pack('!b', ((int(ap['channel']) & 0x0F) | 128))
-    else:
-        s += struct.pack('!b', ((int(ap['channel']) & 0x0F) | 0))
-    s += struct.pack('!b', int(ap['signal_level_dBm']))
-    s += struct.pack('!s', "".join(ap['mac'].split()))
-    s += struct.pack('!s', ap['essid'])
+    s = struct.pack('!bb12s',
+                    int(ap['signal_level_dBm']),
+                    (int(ap['channel']) & 0x0F) | (128 if ap['encryption'] is 'yes' else 0),
+                    "".join(ap['mac'].split(':')),
+                    )
+
+    s += ap['essid'] + b'\0' # null terminate the string
+    print('s', s)
+
     return s
 
 
-INTERFACE='wlp2s0'
+INTERFACE='wlp3s0b1'#'wlp2s0'
 
 access_points = dict()
 keys= ['essid', 'encryption', 'signal_level_dBm', 'channel']
 keys_short = ['essid', 'encryption', 'channel']
 
-new_stuff = dict()
 #content = iwlist.scan(interface=INTERFACE)
 #cells = iwlist.parse(content)
 
@@ -68,6 +85,12 @@ while True:
                     #print('Old = ' + access_points[c['mac']][k])
                     #print('New = ' + c[k])#'mac'][k])
                     #print
+
+    bytearr = bytearray()
+    for val in new_stuff:
+        bytearr += val
+
+    scanner_send(bytearr)
     print("CYCLE COMPLETE")
 
     print("CPU use percentage = " + str(psutil.cpu_percent(interval=None)))

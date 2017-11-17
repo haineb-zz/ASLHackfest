@@ -98,23 +98,26 @@ class NetworkLayerTransmitHandler(threading.Thread, object):
         while self.out_queue.empty() is False:
             tmp_egress.append(self.out_queue.get())
 
-        while len(tmp_egress) > EGRESS_WINDOW_LOW:
+        to_drop = len(tmp_egress) - EGRESS_WINDOW_LOW
+
+        while to_drop > 0:
             max_cos = 0
+
             for pkt in tmp_egress:
                 cos = pkt[Frame.qos_pos] & 0x0f
                 if cos > max_cos:
                     max_cos = cos
 
-            candidates = []
-            for i in range(0, len(tmp_egress)):
+            for i in reversed(range(0,len(tmp_egress))):
+                if to_drop <= 0:
+                    break
+
                 cos = tmp_egress[i][Frame.qos_pos] & 0x0f
                 if cos == max_cos:
-                    candidates.append(i)
+                    tmp_egress[i] = None
+                    to_drop -= 1
 
-            candidates.reverse()
-            while len(tmp_egress) > EGRESS_WINDOW_LOW and len(candidates) > 0:
-                target = candidates.pop()
-                del(tmp_egress[target])
+            tmp_egress = [x for x in tmp_egress if x is not None]
 
         tmp_egress.reverse()
         while len(tmp_egress) > 0:
