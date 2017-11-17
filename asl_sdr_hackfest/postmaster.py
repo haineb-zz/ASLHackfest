@@ -1,4 +1,5 @@
 import threading
+import binascii
 
 from asl_sdr_hackfest.service import Service
 
@@ -49,12 +50,18 @@ class Postmaster(threading.Thread, object):
         '''
 
         self.frame_rx = NetworkLayerReceiveHandler(output_data_func = self.frameDeframed)
-        self.frame_tx = NetworkLayerTransmitHandler(output_data_func = self.services['radio']['service'].outputData)
+        self.frame_tx = NetworkLayerTransmitHandler(output_data_func = self.debugTxCallback)
 
         self.rtp_handler_rx = RTP_Handler()
         self.rtp_handler_tx = RTP_Handler()
 
         threading.Thread.__init__(self)
+
+
+    def debugTxCallback(self, data):
+        print('Transmitting frame:')
+        print(binascii.hexlify(data))
+        self.services['radio']['service'].outputData(data)
 
 
     def run(self):
@@ -73,6 +80,8 @@ class Postmaster(threading.Thread, object):
                 if data is None:
                     continue
                 if srv['type'] == 'radio':
+                    print('Receiving frame:')
+                    print(binascii.hexlify(data))
                     self.frame_rx.ingest_data(data)
                 elif srv['type'] == 'client':
                     rtp_header = self.rtp_handler_tx.tx(srv['config']['ssrc'], 'gsm') # This is a byte array, not a header class
