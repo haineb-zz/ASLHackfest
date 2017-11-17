@@ -111,10 +111,11 @@ class NetworkLayerTransmitHandler(threading.Thread, object):
                 if cos == max_cos:
                     candidates.append(i)
 
-            candidates.reverse()
+            tmp_egress.reverse()
             while len(tmp_egress) > EGRESS_WINDOW_LOW and len(candidates) > 0:
                 target = candidates.pop()
                 del(tmp_egress[target])
+            tmp_egress.reverse()
 
         tmp_egress.reverse()
         while len(tmp_egress) > 0:
