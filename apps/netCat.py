@@ -60,15 +60,22 @@ class netCatLauncher:
             self.receiver = netCatReceiver()
         # usage: netCat.py (image_file)
         elif len(sys.argv) == 2:
-            self.sender = netCatSender(sys.argv[1])
+            self.sender = netCatSender(img_fp=sys.argv[1])
             self.receiver = None
         # usage: netCat.py (ip, port)
         elif len(sys.argv) == 3:
             self.sender = None
-            self.receiver = netCatReceiver()
+            self.receiver = netCatReceiver(\
+                ip_address=sys.argv[1],    \
+                port=sys.argv[2]           \
+            )
         # usage: netCat.py (image_file, ip, port)
         elif len(sys.argv) == 4:
-            self.sender = netCatSender(sys.argv[1])
+            self.sender = netCatSender(\
+                img_fp=sys.argv[1],    \
+                ip_address=sys.argv[2],\
+                port=sys.argv[3]       \
+            )
             self.receiver = None
         else:
             print("receive: ./netCat.py \n transmit: ./netCat.py cat_image")
@@ -76,18 +83,17 @@ class netCatLauncher:
     def run(self):
         while True:
             try:
-                if len(sys.argv) > 1:
+                if self.sender is not None:
                     self.sender.send()
-                else:
+                if self.receiver is not None:
                     self.receiver.recv()
             except KeyboardInterrupt:
-                # BUG: sender will not call sit() on SIGINT
                 nc.sit()
                 break
             except:
-                if len(sys.argv) > 1:
+                if self.sender is not None:
                     print "failed to send"
-                else:
+                if self.receive is not None:
                     print "failed to receive"
 
     def sit(self):
