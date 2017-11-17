@@ -39,8 +39,9 @@ rects1 = ax.bar(ind, mens_means, width, color='r', yerr=men_std)
 women_means = (25, 32, 34, 20, 25)
 women_std = (3, 5, 2, 3, 3)
 
+ap_sig_levels = (20,35, 30, 35, 27)
+for a in access_points:
 
-ap_means = (20,35, 30, 35, 27)
 #other_means = (32, 61, 20, 25, 12)
 
 rects2 = ax.bar(ind + width, women_means, width, color='y', yerr=women_std)
@@ -70,3 +71,17 @@ plt.show()
 time.sleep(3)
 women_means = (30, 37, 34, 29, 37)
 
+'''
+This is for formating the ticks on the x axis
+https://stackoverflow.com/questions/17158382/centering-x-tick-labels-between-tick-marks-in-matplotlib
+'''
+import matplotlib.ticker as ticker
+
+# a is an axes object, e.g. from figure.get_axes()
+
+# Hide major tick labels
+a.xaxis.set_major_formatter(ticker.NullFormatter())
+
+# Customize minor tick labels
+a.xaxis.set_minor_locator(ticker.FixedLocator([1.5,2.5,3.5,4.5,5.5]))
+a.xaxis.set_minor_formatter(ticker.FixedFormatter(['1','2','3','4','5']))
