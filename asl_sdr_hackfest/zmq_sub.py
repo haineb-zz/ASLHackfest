@@ -4,7 +4,7 @@ import numpy, pmt
 
 import binascii
 
-import pmt_mav_dump as pmd
+#import pmt_mav_dump as pmd
 
 class ZMQ_sub(object):
     def __init__(self, portIn, timeout = 100):
@@ -30,6 +30,6 @@ class ZMQ_sub(object):
         cdr = pmt.to_python(pmt.cdr(pdu))
         cdr = numpy.getbuffer(cdr)
 
-        print self.decode.method(msg)
+        #print self.decode.method(msg)
 
         return cdr
