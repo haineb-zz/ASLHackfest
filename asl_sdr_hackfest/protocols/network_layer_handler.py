@@ -51,7 +51,7 @@ class NetworkLayerReceiveHandler(threading.Thread, object):
 
 
 class NetworkLayerTransmitHandler(threading.Thread, object):
-    def __init__(self, output_data_func, max_frames_per_second = 4):
+    def __init__(self, output_data_func, max_frames_per_second = 20):
         self.running = False
 
         self.xmit_delay = float(1)/float(max_frames_per_second)
@@ -82,7 +82,7 @@ class NetworkLayerTransmitHandler(threading.Thread, object):
         self.running = True
 
         while (self.running is True):
-            self.tx_class.do_transmit(mtu = 96 - Frame.headerlength - 40)
+            self.tx_class.do_transmit(mtu = 96 - Frame.headerlength)
             time.sleep(self.xmit_delay)
             if self.out_queue.empty() is False:
                 if self.out_queue.qsize() > EGRESS_WINDOW_HIGH:
