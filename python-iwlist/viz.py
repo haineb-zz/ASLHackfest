@@ -25,24 +25,7 @@ class Viz(object):
         for i in range(0,11):
             self.channels_list.append(list())
 
-        self.channel1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        self.aps_in_channel = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        self.channels_list[0] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        self.channels_list[1] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        self.channels_list[2] = [x * 2 for x in self.channel1]
-        self.channel1 = [x * 3 for x in self.channel1]
-        self.channel4 = [x * 4 for x in self.channel1]
-        self.channel5 = [x * 5 for x in self.channel1]
-        self.channel6 = [x * 6 for x in self.channel1]
-        self.channel7 = [x * 7 for x in self.channel1]
-        self.channel8 = [x * 8 for x in self.channel1]
-        self.channel9 = [x * 9 for x in self.channel1]
-        self.channel10 = [x * 10 for x in self.channel1]
-        self.channel11 = [x * 2.5 for x in self.channel1]
-        self.strength = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 25]
         self.width= 0.2
-        N=11
-        self.ind = np.arange(N)
         print("Viz init")
 
         self._ipAddress = '127.0.0.1'
@@ -101,20 +84,24 @@ class Viz(object):
 
             plt.ion()  # Turns on interactive mode
             fig = plt.figure()
-            fig, axarr = plt.subplots(ncols=11, sharey=True)
+            fig, axarr = plt.subplots(ncols=16, sharey=True)
             prop = plt.rcParams['axes.prop_cycle']
             for c in range(0,11):
                 axarr[c].xaxis.set_major_locator(ticker.NullLocator())
                 axarr[c].tick_params(length=0)
                 axarr[c].set_xlabel((str(c+1)))
                 axarr[c].clear()
-                x=list()
-                y=list()
-                for ap in self.channelslist[c]:
-                    x.append(ap.mac)
-                    y.append(ap.sig_level)
+                #x=list()
+                #y=list()
+                x=np.array([])
+                y=np.array([])
+                channel_dict = self.channelslist[c]
+                for ap in channel_dict:
+                    #print("ap = " + str(ap))
+                    np.append(x, [channel_dict[ap].mac])
+                    np.append(y, [channel_dict[ap].sig_level])
                
-                [axarr[c].bar(param[0],param[1],color=param[2]['color']) for param in zip(self.channelslist[c], self.strength, prop)]
+                [axarr[c].bar(param[0],param[1],color=param[2]['color']) for param in zip(x, y, prop)]
 
             
 
