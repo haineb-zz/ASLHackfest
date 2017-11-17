@@ -6,7 +6,7 @@ import time
 import psutil
 import pmt
 import struct
-import zmq
+#import zmq
 
 ZMQ_IP = '127.0.0.1'
 ZMQ_PORT = 5058
@@ -17,12 +17,12 @@ socketOut.bind('tcp://%s:%s' % (ZMQ_IP, ZMQ_PORT))
 
 
 def scanner_send(data):
-    car = pmt.make_dict()
-    data = bytes(data)
-    cdr = pmt.to_pmt(data)
-    pdu = pmt.cons(car, cdr)
-    socketOut.send(pmt.serialize_str(pdu))
-
+    #car = pmt.make_dict()
+    #data = bytes(data)
+    #cdr = pmt.to_pmt(data)
+    #pdu = pmt.cons(car, cdr)
+    #socketOut.send(pmt.serialize_str(pdu))
+    socketOut.send(data)
 
 def pack_ap(ap):
     #s = struct.Struct()

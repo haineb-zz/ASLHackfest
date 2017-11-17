@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import pmt
+#import pmt
 import struct
 import zmq
 import binascii
@@ -65,10 +65,10 @@ class Viz(object):
 
     def recv(self):
         msg = self._socketIn.recv()
-        pdu = pmt.deserialize_str(msg)
-        cdr = pmt.to_python(pmt.cdr(pdu))
-        cdr = np.getbuffer(cdr)
-        return cdr
+        #pdu = pmt.deserialize_str(msg)
+        #cdr = pmt.to_python(pmt.cdr(pdu))
+        #cdr = np.getbuffer(cdr)
+        return msg
 
 
     def update_ap(self, ap):
