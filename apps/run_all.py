@@ -15,7 +15,7 @@ class Runner(object):
 
         services = {}
         radio = {
-            'service': Service(portIn = 6126, portOut = 6127),
+            'service': Service(portIn = 6126, portOut = 6127, name = 'radio'),
             'type': 'radio',
             'config': None,
         }
@@ -26,7 +26,7 @@ class Runner(object):
             'ssrc': 0,
         }
         mavlink = {
-            'service': Service(portIn = 6128, portOut = 6131),
+            'service': Service(portIn = 6128, portOut = 6131, name = 'gcs?'),
             'type': 'client',
             'config': mavlink_config,
         }
@@ -37,7 +37,7 @@ class Runner(object):
             'ssrc': 1,
         }
         cats = {
-            'service': Service(portIn = 5058, portOut = 5059),
+            'service': Service(portIn = 5058, portOut = 5059, name = 'cats'),
             'type': 'client',
             'config': cats_config,
         }
@@ -57,7 +57,7 @@ class Runner(object):
             'ssrc': 0,
         }
         mavlink = {
-            'service': Service(portIn = 6130, portOut = 6129),
+            'service': Service(portIn = 6130, portOut = 6129, name = 'uav?'),
             'type': 'client',
             'config': mavlink_config,
         }
@@ -68,7 +68,7 @@ class Runner(object):
             'ssrc': 1,
         }
         cats = {
-            'service': Service(portIn = 5158, portOut = 5159),
+            'service': Service(portIn = 5158, portOut = 5159, name = 'cats?'),
             'type': 'client',
             'config': cats_config,
         }
