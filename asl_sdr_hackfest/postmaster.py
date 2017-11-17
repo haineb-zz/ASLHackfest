@@ -1,4 +1,7 @@
+#!/usr/bin/python
+
 import threading
+import binascii
 
 from asl_sdr_hackfest.service import Service
 
@@ -49,12 +52,18 @@ class Postmaster(threading.Thread, object):
         '''
 
         self.frame_rx = NetworkLayerReceiveHandler(output_data_func = self.frameDeframed)
-        self.frame_tx = NetworkLayerTransmitHandler(output_data_func = self.services['radio']['service'].outputData)
+        self.frame_tx = NetworkLayerTransmitHandler(output_data_func = self.debugTxCallback)
 
         self.rtp_handler_rx = RTP_Handler()
         self.rtp_handler_tx = RTP_Handler()
 
         threading.Thread.__init__(self)
+
+
+    def debugTxCallback(self, data):
+        print('Transmitting frame:')
+        print(binascii.hexlify(data))
+        self.services['radio']['service'].outputData(data)
 
 
     def run(self):
@@ -73,10 +82,12 @@ class Postmaster(threading.Thread, object):
                 if data is None:
                     continue
                 if srv['type'] == 'radio':
+                    print('Receiving frame:')
+                    print(binascii.hexlify(data))
                     self.frame_rx.ingest_data(data)
                 elif srv['type'] == 'client':
-#                    rtp_header = self.rtp_handler_tx.tx(srv['config']['ssrc'], 'gsm') # This is a byte array, not a header class
-#                    data = rtp_header + data
+                    rtp_header = self.rtp_handler_tx.tx(srv['config']['ssrc'], 'gsm') # This is a byte array, not a header class
+                    data = rtp_header + data
                     qos_header = QoS.header_calculate(data) # This is a header class, not a byte array
                     qos_header.set_priority_code(srv['config']['qos'])
                     data = qos_header.to_bytearray() + data
@@ -85,16 +96,20 @@ class Postmaster(threading.Thread, object):
 
     def frameDeframed(self, data):
         cls, data = QoS.header_consume(data)
+        #rtp_header is an instance of RTP
+        rtp_header_and_validity, data = self.rtp_handler_rx.header_consume(data)
+        rtp_header = rtp_header_and_validity[0]
+        validity = rtp_header_and_validity[1]
+        # Seq number is valid, process data
+        if validity:
+            ssrc = rtp_header.get_ssrc()
+            for srv in self.services:
+                srv = self.services[srv]
+                if srv['type'] == 'client':
+                    conf = srv['config']
+                    if conf is not None and ssrc == conf['ssrc']:
+                        srv['service'].outputData(data)
 
-#        rtp_header, data = self.rtp_handler_rx.header_consume(data)
-#        ssrc = rtp_header.get_ssrc()
-
-        for srv in self.services:
-            srv = self.services[srv]
-            if srv['type'] == 'client':
-#            conf = srv['config']
-#            if conf is not None and ssrc == conf['ssrc']:
-                srv['service'].outputData(data)
 
 
     def stop(self):

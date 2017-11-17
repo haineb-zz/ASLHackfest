@@ -108,7 +108,7 @@ class NetworkLayerTransmitHandler(threading.Thread, object):
                 if cos > max_cos:
                     max_cos = cos
 
-            for i in reversed(range(0,len(tmp_egress))):
+           for i in reversed(range(0,len(tmp_egress))):
                 if to_drop <= 0:
                     break
 

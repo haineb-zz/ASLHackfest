@@ -7,7 +7,7 @@ from asl_sdr_hackfest.zmq_pub import ZMQ_pub
 
 
 class Service(threading.Thread, object):
-    def __init__(self, portIn, portOut):
+    def __init__(self, portIn, portOut, name=None):
         self.running = False
 
         self._ZMQ_in = ZMQ_sub(portIn = portIn)
@@ -16,6 +16,8 @@ class Service(threading.Thread, object):
         self._input_queue = queue.Queue()
 
         threading.Thread.__init__(self)
+        self.setName(name)
+
 
         
     def run(self):
