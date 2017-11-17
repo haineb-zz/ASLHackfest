@@ -96,44 +96,56 @@ class Viz(object):
 
 
     def run(self):
-        plt.ion()  # Turns on interactive mode
-        fig = plt.figure()
-        fig, axarr = plt.subplots(ncols=11, sharey=True)
-        prop = plt.rcParams['axes.prop_cycle']
-        for c in range(0,11):
-            axarr[c].xaxis.set_major_locator(ticker.NullLocator())
-            axarr[c].tick_params(length=0)
-            axarr[c].set_xlabel((str(c+1)))
-            [axarr[c].bar(param[0],param[1],color=param[2]['color']) for param in zip(self.aps_in_channel, self.strength, prop)]
+        while True: 
+            self.channelslist =  self.unpack(self.recv())
+
+            plt.ion()  # Turns on interactive mode
+            fig = plt.figure()
+            fig, axarr = plt.subplots(ncols=11, sharey=True)
+            prop = plt.rcParams['axes.prop_cycle']
+            for c in range(0,11):
+                axarr[c].xaxis.set_major_locator(ticker.NullLocator())
+                axarr[c].tick_params(length=0)
+                axarr[c].set_xlabel((str(c+1)))
+                axarr[c].clear()
+                x=list()
+                y=list()
+                for ap in self.channelslist[c]:
+                    x.append(ap.mac)
+                    y.append(ap.sig_level)
+               
+                [axarr[c].bar(param[0],param[1],color=param[2]['color']) for param in zip(self.channelslist[c], self.strength, prop)]
+
             
 
-        axarr[0].set_ylim([0, 100])
-        axarr[0].yaxis.set_major_formatter(ticker.FixedLocator([0, 1, 2, 3, 4, 5]))
-        axarr[0].yaxis.set_major_formatter(ticker.FixedFormatter(['', '-80', '-60', '-40', '-20', '0']))
-
-        axarr[0].set_ylabel('dBm', horizontalalignment='left')
 
 
-        plt.subplots_adjust(bottom=0.2, top=0.9, left=0.1, right=0.9, wspace=0.0)
+            axarr[0].set_ylim([0, 100])
+            axarr[0].yaxis.set_major_formatter(ticker.FixedLocator([0, 1, 2, 3, 4, 5]))
+            axarr[0].yaxis.set_major_formatter(ticker.FixedFormatter(['', '-80', '-60', '-40', '-20', '0']))
 
+            axarr[0].set_ylabel('dBm', horizontalalignment='left')
+
+            plt.subplots_adjust(bottom=0.2, top=0.9, left=0.1, right=0.9, wspace=0.0)
+            plt.pause(1)
+
+'''
         while True:
-            first = self.strength[0]
-            for v in range(0,len(self.strength)):
-                try:
-                    self.strength[v] = self.strength[v+1]
-                except IndexError:
-                    self.strength[v] = first
             for ax in axarr:
                 ax.clear()
                 [ax.bar(param[0],param[1],color=param[2]['color']) for param in zip(self.aps_in_channel, self.strength, prop)]
+            axarr[0].set_ylim([0, 100])
+            axarr[0].yaxis.set_major_formatter(ticker.FixedLocator([0, 1, 2, 3, 4, 5]))
+            axarr[0].yaxis.set_major_formatter(ticker.FixedFormatter(['', '-80', '-60', '-40', '-20', '0']))
 
             plt.pause(1)
             print("Strength[0] = " + str(self.strength[0]))
+'''
 
 
 if __name__ == "__main__":
     print("Start Viz script")
-    v = Viz()
+    v = Viz(5159)
     print("Made v")
     v.run()
     print("Ran v")
