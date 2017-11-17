@@ -26,14 +26,15 @@ def scanner_send(data):
 
 def pack_ap(ap):
     #s = struct.Struct()
-    s = struct.pack('!b', int(ap['signal_level_dBm']))
-    if ap['encryption'] is 'yes':
-        s += struct.pack('!b', ((int(ap['channel']) & 0x0F) | 128))
-    else:
-        s += struct.pack('!b', ((int(ap['channel']) & 0x0F) | 0))
-    s += struct.pack('!b', int(ap['signal_level_dBm']))
-    s += struct.pack('!s', "".join(ap['mac'].split()))
-    s += struct.pack('!s', ap['essid'])
+    s = struct.pack('!bb12s',
+                    int(ap['signal_level_dBm']),
+                    (int(ap['channel']) & 0x0F) | (128 if ap['encryption'] is 'yes' else 0),
+                    "".join(ap['mac'].split(':')),
+                    )
+
+    s += ap['essid'] + b'\0' # null terminate the string
+    print('s', s)
+
     return s
 
 
