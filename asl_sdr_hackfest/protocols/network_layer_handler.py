@@ -111,14 +111,19 @@ class NetworkLayerTransmitHandler(threading.Thread, object):
                 if cos == max_cos:
                     candidates.append(i)
 
+            to_drop = len(tmp_egress) - EGRESS_WINDOW_LOW
+
             candidates.reverse()
-            while len(tmp_egress) > EGRESS_WINDOW_LOW and len(candidates) > 0:
+            while to_drop > 0 and len(candidates) > 0:
+                to_drop -= 1
                 target = candidates.pop()
-                del(tmp_egress[target])
+                tmp_egress[target] = None
 
         tmp_egress.reverse()
         while len(tmp_egress) > 0:
-            self.out_queue.put(tmp_egress.pop())
+            val = tmp_egress.pop()
+            if val is not None:
+                self.out_queue.put()
 
         culled_size = self.out_queue.qsize()
         print('Egress queue culled from {} to {}.'.format(init_size, culled_size))
