@@ -4,7 +4,24 @@
 import iwlist
 import time
 import psutil
+import pmt
 import struct
+import zmq
+
+ZMQ_IP = '127.0.0.1'
+ZMQ_PORT = 5058
+
+zmq_context = zmq.Context()
+socketOut = zmq_context.socket(zmq.PUB)
+socketOut.bind('tcp://%s:%s' % (ZMQ_IP, ZMQ_PORT))
+
+
+def scanner_send(data):
+    car = pmt.make_dict()
+    data = bytes(data)
+    cdr = pmt.to_pmt(data)
+    pdu = pmt.cons(car, cdr)
+    socketOut.send(pmt.serialize_str(pdu))
 
 
 def pack_ap(ap):
@@ -20,13 +37,12 @@ def pack_ap(ap):
     return s
 
 
-INTERFACE='wlp2s0'
+INTERFACE='wlp3s0b1'#'wlp2s0'
 
 access_points = dict()
 keys= ['essid', 'encryption', 'signal_level_dBm', 'channel']
 keys_short = ['essid', 'encryption', 'channel']
 
-new_stuff = dict()
 #content = iwlist.scan(interface=INTERFACE)
 #cells = iwlist.parse(content)
 
@@ -68,6 +84,12 @@ while True:
                     #print('Old = ' + access_points[c['mac']][k])
                     #print('New = ' + c[k])#'mac'][k])
                     #print
+
+    bytearr = bytearray()
+    for val in new_stuff:
+        bytearr += val
+
+    scanner_send(bytearr)
     print("CYCLE COMPLETE")
 
     print("CPU use percentage = " + str(psutil.cpu_percent(interval=None)))
